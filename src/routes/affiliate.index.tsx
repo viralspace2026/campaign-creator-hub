@@ -1,9 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { Search } from "lucide-react";
-import { mockCampaigns, type ActionType } from "@/lib/mock-data";
+import { type ActionType } from "@/lib/mock-data";
 import { CampaignCard } from "@/components/CampaignCard";
 import { ActionTile } from "@/components/ActionTile";
+import { useStore } from "@/lib/store";
 
 export const Route = createFileRoute("/affiliate/")({
   head: () => ({ meta: [{ title: "Browse campaigns — ViralSpace" }] }),
@@ -11,9 +12,10 @@ export const Route = createFileRoute("/affiliate/")({
 });
 
 function Browse() {
+  const campaigns = useStore((s) => s.campaigns);
   const [filter, setFilter] = useState<ActionType | "all">("all");
   const [q, setQ] = useState("");
-  const live = mockCampaigns.filter((c) => c.status === "live");
+  const live = campaigns.filter((c) => c.status === "live");
   const visible = live.filter(
     (c) =>
       (filter === "all" || c.actions.includes(filter)) &&
