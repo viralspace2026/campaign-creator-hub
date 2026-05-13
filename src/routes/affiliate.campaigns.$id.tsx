@@ -62,7 +62,7 @@ function Detail() {
           )}
 
           <div className="mt-2 grid grid-cols-2 gap-3 sm:grid-cols-4">
-            {c.actions.map((a) => (
+            {c.actions.map((a: ActionType) => (
               <ActionTile key={a} type={a} size="sm" selected={active === a} onClick={() => setActive(a)} />
             ))}
           </div>
