@@ -1,38 +1,60 @@
-import { createFileRoute, Link, notFound } from "@tanstack/react-router";
-import { ArrowLeft, Copy, Check } from "lucide-react";
-import { useState } from "react";
-import { mockCampaigns, actionMeta, type ActionType } from "@/lib/mock-data";
+import { createFileRoute, Link, useParams } from "@tanstack/react-router";
+import { ArrowLeft, Copy, Check, CheckCircle2 } from "lucide-react";
+import { useMemo, useState } from "react";
+import { actionMeta, type ActionType } from "@/lib/mock-data";
 import { ActionTile } from "@/components/ActionTile";
+import { store, useStore } from "@/lib/store";
 
 export const Route = createFileRoute("/affiliate/campaigns/$id")({
-  loader: ({ params }) => {
-    const c = mockCampaigns.find((x) => x.id === params.id);
-    if (!c) throw notFound();
-    return c;
-  },
-  head: ({ loaderData }) => ({
-    meta: [
-      { title: loaderData ? `${loaderData.title} — Campaign` : "Campaign" },
-      { name: "description", content: loaderData?.description ?? "" },
-      { property: "og:image", content: loaderData?.image ?? "" },
-    ],
-  }),
+  head: () => ({ meta: [{ title: "Campaign — ViralSpace" }] }),
   component: Detail,
-  notFoundComponent: () => (
-    <div className="p-12 text-center">
-      <h1 className="text-2xl font-bold">Campaign not found</h1>
-      <Link to="/affiliate" className="mt-4 inline-block text-primary">
-        Back to browse
-      </Link>
-    </div>
-  ),
 });
 
+const NEXT_STEPS: Record<ActionType, string[]> = {
+  sales: [
+    "Copy your unique referral link below",
+    "Share it across your audience and social channels",
+    "Earn the listed commission on every verified sale",
+  ],
+  promote: [
+    "Download brand banners from the campaign kit",
+    "Post them with your tagged referral link",
+    "Get paid based on impressions and click-through performance",
+  ],
+  survey: [
+    "Open the curated survey from your dashboard",
+    "Answer all questions honestly — typically takes 3–5 minutes",
+    "Reward is paid out within 24h of validation",
+  ],
+  task: [
+    "Read the task brief carefully",
+    "Complete the marketing task as described",
+    "Submit proof (screenshot or link). Get paid once verified.",
+  ],
+};
+
 function Detail() {
-  const c = Route.useLoaderData();
-  const [active, setActive] = useState<ActionType>(c.actions[0]);
+  const { id } = useParams({ from: "/affiliate/campaigns/$id" });
+  const c = useStore((s) => s.campaigns.find((x) => x.id === id));
+  const joined = useStore((s) => s.joined[id] ?? []);
+  const [active, setActive] = useState<ActionType | null>(null);
   const [copied, setCopied] = useState(false);
-  const refLink = `https://viral.space/r/${c.id}/alex`;
+
+  const current: ActionType | null = active ?? c?.actions[0] ?? null;
+  const refLink = useMemo(() => `https://viral.space/r/${id}/alex`, [id]);
+
+  if (!c) {
+    return (
+      <div className="p-12 text-center">
+        <h1 className="text-2xl font-bold">Campaign not found</h1>
+        <Link to="/affiliate" className="mt-4 inline-block text-primary">
+          Back to browse
+        </Link>
+      </div>
+    );
+  }
+
+  const isJoined = current ? joined.includes(current) : false;
 
   return (
     <div className="space-y-6">
@@ -63,27 +85,46 @@ function Detail() {
 
           <div className="mt-2 grid grid-cols-2 gap-3 sm:grid-cols-4">
             {c.actions.map((a: ActionType) => (
-              <ActionTile key={a} type={a} size="sm" selected={active === a} onClick={() => setActive(a)} />
+              <div key={a} className="relative">
+                <ActionTile type={a} size="sm" selected={current === a} onClick={() => setActive(a)} />
+                {joined.includes(a) && (
+                  <CheckCircle2 className="absolute -right-1 -top-1 size-4 rounded-full bg-card text-success" />
+                )}
+              </div>
             ))}
           </div>
         </div>
       </div>
 
-      <div className="rounded-3xl bg-card p-6 ring-1 ring-border/60">
-        <div className="flex items-center gap-3">
-          <div className="w-32">
-            <ActionTile type={active} />
+      {current && (
+        <div className="rounded-3xl bg-card p-6 ring-1 ring-border/60">
+          <div className="flex items-center gap-3">
+            <div className="w-32">
+              <ActionTile type={current} />
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold capitalize">{actionMeta[current].label} action</h3>
+              <p className="text-sm text-muted-foreground">{actionMeta[current].description}</p>
+            </div>
           </div>
-          <div>
-            <h3 className="text-lg font-semibold capitalize">{actionMeta[active].label} action</h3>
-            <p className="text-sm text-muted-foreground">{actionMeta[active].description}</p>
-          </div>
-        </div>
 
-        <div className="mt-5">
-          {active === "sales" && (
+          <div className="mt-5 grid gap-5 md:grid-cols-2">
+            <div>
+              <h4 className="mb-2 text-xs font-bold uppercase tracking-wide text-muted-foreground">Next steps</h4>
+              <ol className="space-y-2">
+                {NEXT_STEPS[current].map((step, i) => (
+                  <li key={i} className="flex gap-2 text-sm">
+                    <span className="grid size-5 shrink-0 place-items-center rounded-full bg-secondary text-xs font-bold text-secondary-foreground">
+                      {i + 1}
+                    </span>
+                    <span>{step}</span>
+                  </li>
+                ))}
+              </ol>
+            </div>
+
             <div className="space-y-3">
-              <p className="text-sm">You earn <strong>{c.commission}</strong> on every sale through your link.</p>
+              <h4 className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Your referral link</h4>
               <div className="flex items-center gap-2 rounded-xl bg-muted/60 p-3">
                 <code className="flex-1 truncate text-sm">{refLink}</code>
                 <button
@@ -95,25 +136,24 @@ function Detail() {
                   className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground hover:opacity-90"
                 >
                   {copied ? <Check className="size-3.5" /> : <Copy className="size-3.5" />}
-                  {copied ? "Copied" : "Copy link"}
+                  {copied ? "Copied" : "Copy"}
                 </button>
               </div>
+              {current === "sales" && c.commission && (
+                <p className="text-xs text-muted-foreground">You earn <strong>{c.commission}</strong> on every verified sale.</p>
+              )}
             </div>
-          )}
-          {active === "promote" && (
-            <p className="text-sm">Share campaign banners and links. Get paid based on visibility performance.</p>
-          )}
-          {active === "survey" && (
-            <p className="text-sm">Answer the curated questions and receive payment after completion.</p>
-          )}
-          {active === "task" && (
-            <p className="text-sm">Complete the marketing task, upload proof, and get paid once verified.</p>
-          )}
-          <button className="mt-5 rounded-xl bg-primary px-5 py-2.5 font-semibold text-primary-foreground hover:opacity-90">
-            Join this action
+          </div>
+
+          <button
+            onClick={() => store.joinAction(id, current)}
+            disabled={isJoined}
+            className="mt-6 inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-60"
+          >
+            {isJoined ? (<><CheckCircle2 className="size-4" /> Joined</>) : "Participate in this action"}
           </button>
         </div>
-      </div>
+      )}
     </div>
   );
 }
