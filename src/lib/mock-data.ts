@@ -20,7 +20,7 @@ export interface Campaign {
     affiliates: number;
     visitors: number;
   };
-  status: "draft" | "pending" | "live";
+  status: "draft" | "pending" | "live" | "rejected";
   featured?: boolean;
 }
 
