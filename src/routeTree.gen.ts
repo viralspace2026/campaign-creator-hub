@@ -9,38 +9,75 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as LoginRouteImport } from './routes/login'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as SignupBrandRouteImport } from './routes/signup.brand'
+import { Route as SignupAffiliateRouteImport } from './routes/signup.affiliate'
 
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SignupBrandRoute = SignupBrandRouteImport.update({
+  id: '/signup/brand',
+  path: '/signup/brand',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SignupAffiliateRoute = SignupAffiliateRouteImport.update({
+  id: '/signup/affiliate',
+  path: '/signup/affiliate',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/login': typeof LoginRoute
+  '/signup/affiliate': typeof SignupAffiliateRoute
+  '/signup/brand': typeof SignupBrandRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/login': typeof LoginRoute
+  '/signup/affiliate': typeof SignupAffiliateRoute
+  '/signup/brand': typeof SignupBrandRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/login': typeof LoginRoute
+  '/signup/affiliate': typeof SignupAffiliateRoute
+  '/signup/brand': typeof SignupBrandRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths: '/' | '/login' | '/signup/affiliate' | '/signup/brand'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to: '/' | '/login' | '/signup/affiliate' | '/signup/brand'
+  id: '__root__' | '/' | '/login' | '/signup/affiliate' | '/signup/brand'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  LoginRoute: typeof LoginRoute
+  SignupAffiliateRoute: typeof SignupAffiliateRoute
+  SignupBrandRoute: typeof SignupBrandRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -48,11 +85,28 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/signup/brand': {
+      id: '/signup/brand'
+      path: '/signup/brand'
+      fullPath: '/signup/brand'
+      preLoaderRoute: typeof SignupBrandRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/signup/affiliate': {
+      id: '/signup/affiliate'
+      path: '/signup/affiliate'
+      fullPath: '/signup/affiliate'
+      preLoaderRoute: typeof SignupAffiliateRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  LoginRoute: LoginRoute,
+  SignupAffiliateRoute: SignupAffiliateRoute,
+  SignupBrandRoute: SignupBrandRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
