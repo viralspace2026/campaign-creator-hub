@@ -9,38 +9,204 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as LoginRouteImport } from './routes/login'
+import { Route as BrandRouteImport } from './routes/brand'
+import { Route as AffiliateRouteImport } from './routes/affiliate'
+import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as BrandIndexRouteImport } from './routes/brand.index'
+import { Route as AffiliateIndexRouteImport } from './routes/affiliate.index'
+import { Route as SignupBrandRouteImport } from './routes/signup.brand'
+import { Route as SignupAffiliateRouteImport } from './routes/signup.affiliate'
+import { Route as AffiliateEarningsRouteImport } from './routes/affiliate.earnings'
+import { Route as BrandCampaignsNewRouteImport } from './routes/brand.campaigns.new'
+import { Route as AffiliateCampaignsIdRouteImport } from './routes/affiliate.campaigns.$id'
 
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BrandRoute = BrandRouteImport.update({
+  id: '/brand',
+  path: '/brand',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AffiliateRoute = AffiliateRouteImport.update({
+  id: '/affiliate',
+  path: '/affiliate',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const BrandIndexRoute = BrandIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => BrandRoute,
+} as any)
+const AffiliateIndexRoute = AffiliateIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AffiliateRoute,
+} as any)
+const SignupBrandRoute = SignupBrandRouteImport.update({
+  id: '/signup/brand',
+  path: '/signup/brand',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SignupAffiliateRoute = SignupAffiliateRouteImport.update({
+  id: '/signup/affiliate',
+  path: '/signup/affiliate',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AffiliateEarningsRoute = AffiliateEarningsRouteImport.update({
+  id: '/earnings',
+  path: '/earnings',
+  getParentRoute: () => AffiliateRoute,
+} as any)
+const BrandCampaignsNewRoute = BrandCampaignsNewRouteImport.update({
+  id: '/campaigns/new',
+  path: '/campaigns/new',
+  getParentRoute: () => BrandRoute,
+} as any)
+const AffiliateCampaignsIdRoute = AffiliateCampaignsIdRouteImport.update({
+  id: '/campaigns/$id',
+  path: '/campaigns/$id',
+  getParentRoute: () => AffiliateRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
+  '/affiliate': typeof AffiliateRouteWithChildren
+  '/brand': typeof BrandRouteWithChildren
+  '/login': typeof LoginRoute
+  '/affiliate/earnings': typeof AffiliateEarningsRoute
+  '/signup/affiliate': typeof SignupAffiliateRoute
+  '/signup/brand': typeof SignupBrandRoute
+  '/affiliate/': typeof AffiliateIndexRoute
+  '/brand/': typeof BrandIndexRoute
+  '/affiliate/campaigns/$id': typeof AffiliateCampaignsIdRoute
+  '/brand/campaigns/new': typeof BrandCampaignsNewRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
+  '/login': typeof LoginRoute
+  '/affiliate/earnings': typeof AffiliateEarningsRoute
+  '/signup/affiliate': typeof SignupAffiliateRoute
+  '/signup/brand': typeof SignupBrandRoute
+  '/affiliate': typeof AffiliateIndexRoute
+  '/brand': typeof BrandIndexRoute
+  '/affiliate/campaigns/$id': typeof AffiliateCampaignsIdRoute
+  '/brand/campaigns/new': typeof BrandCampaignsNewRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
+  '/affiliate': typeof AffiliateRouteWithChildren
+  '/brand': typeof BrandRouteWithChildren
+  '/login': typeof LoginRoute
+  '/affiliate/earnings': typeof AffiliateEarningsRoute
+  '/signup/affiliate': typeof SignupAffiliateRoute
+  '/signup/brand': typeof SignupBrandRoute
+  '/affiliate/': typeof AffiliateIndexRoute
+  '/brand/': typeof BrandIndexRoute
+  '/affiliate/campaigns/$id': typeof AffiliateCampaignsIdRoute
+  '/brand/campaigns/new': typeof BrandCampaignsNewRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/admin'
+    | '/affiliate'
+    | '/brand'
+    | '/login'
+    | '/affiliate/earnings'
+    | '/signup/affiliate'
+    | '/signup/brand'
+    | '/affiliate/'
+    | '/brand/'
+    | '/affiliate/campaigns/$id'
+    | '/brand/campaigns/new'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/admin'
+    | '/login'
+    | '/affiliate/earnings'
+    | '/signup/affiliate'
+    | '/signup/brand'
+    | '/affiliate'
+    | '/brand'
+    | '/affiliate/campaigns/$id'
+    | '/brand/campaigns/new'
+  id:
+    | '__root__'
+    | '/'
+    | '/admin'
+    | '/affiliate'
+    | '/brand'
+    | '/login'
+    | '/affiliate/earnings'
+    | '/signup/affiliate'
+    | '/signup/brand'
+    | '/affiliate/'
+    | '/brand/'
+    | '/affiliate/campaigns/$id'
+    | '/brand/campaigns/new'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AdminRoute: typeof AdminRoute
+  AffiliateRoute: typeof AffiliateRouteWithChildren
+  BrandRoute: typeof BrandRouteWithChildren
+  LoginRoute: typeof LoginRoute
+  SignupAffiliateRoute: typeof SignupAffiliateRoute
+  SignupBrandRoute: typeof SignupBrandRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/brand': {
+      id: '/brand'
+      path: '/brand'
+      fullPath: '/brand'
+      preLoaderRoute: typeof BrandRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/affiliate': {
+      id: '/affiliate'
+      path: '/affiliate'
+      fullPath: '/affiliate'
+      preLoaderRoute: typeof AffiliateRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -48,22 +214,95 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/brand/': {
+      id: '/brand/'
+      path: '/'
+      fullPath: '/brand/'
+      preLoaderRoute: typeof BrandIndexRouteImport
+      parentRoute: typeof BrandRoute
+    }
+    '/affiliate/': {
+      id: '/affiliate/'
+      path: '/'
+      fullPath: '/affiliate/'
+      preLoaderRoute: typeof AffiliateIndexRouteImport
+      parentRoute: typeof AffiliateRoute
+    }
+    '/signup/brand': {
+      id: '/signup/brand'
+      path: '/signup/brand'
+      fullPath: '/signup/brand'
+      preLoaderRoute: typeof SignupBrandRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/signup/affiliate': {
+      id: '/signup/affiliate'
+      path: '/signup/affiliate'
+      fullPath: '/signup/affiliate'
+      preLoaderRoute: typeof SignupAffiliateRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/affiliate/earnings': {
+      id: '/affiliate/earnings'
+      path: '/earnings'
+      fullPath: '/affiliate/earnings'
+      preLoaderRoute: typeof AffiliateEarningsRouteImport
+      parentRoute: typeof AffiliateRoute
+    }
+    '/brand/campaigns/new': {
+      id: '/brand/campaigns/new'
+      path: '/campaigns/new'
+      fullPath: '/brand/campaigns/new'
+      preLoaderRoute: typeof BrandCampaignsNewRouteImport
+      parentRoute: typeof BrandRoute
+    }
+    '/affiliate/campaigns/$id': {
+      id: '/affiliate/campaigns/$id'
+      path: '/campaigns/$id'
+      fullPath: '/affiliate/campaigns/$id'
+      preLoaderRoute: typeof AffiliateCampaignsIdRouteImport
+      parentRoute: typeof AffiliateRoute
+    }
   }
 }
 
+interface AffiliateRouteChildren {
+  AffiliateEarningsRoute: typeof AffiliateEarningsRoute
+  AffiliateIndexRoute: typeof AffiliateIndexRoute
+  AffiliateCampaignsIdRoute: typeof AffiliateCampaignsIdRoute
+}
+
+const AffiliateRouteChildren: AffiliateRouteChildren = {
+  AffiliateEarningsRoute: AffiliateEarningsRoute,
+  AffiliateIndexRoute: AffiliateIndexRoute,
+  AffiliateCampaignsIdRoute: AffiliateCampaignsIdRoute,
+}
+
+const AffiliateRouteWithChildren = AffiliateRoute._addFileChildren(
+  AffiliateRouteChildren,
+)
+
+interface BrandRouteChildren {
+  BrandIndexRoute: typeof BrandIndexRoute
+  BrandCampaignsNewRoute: typeof BrandCampaignsNewRoute
+}
+
+const BrandRouteChildren: BrandRouteChildren = {
+  BrandIndexRoute: BrandIndexRoute,
+  BrandCampaignsNewRoute: BrandCampaignsNewRoute,
+}
+
+const BrandRouteWithChildren = BrandRoute._addFileChildren(BrandRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AdminRoute: AdminRoute,
+  AffiliateRoute: AffiliateRouteWithChildren,
+  BrandRoute: BrandRouteWithChildren,
+  LoginRoute: LoginRoute,
+  SignupAffiliateRoute: SignupAffiliateRoute,
+  SignupBrandRoute: SignupBrandRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
