@@ -3,31 +3,26 @@ import { useState } from "react";
 import { ArrowLeft, Check, Plus, X } from "lucide-react";
 import { ActionTile } from "@/components/ActionTile";
 import { actionMeta, type ActionType } from "@/lib/mock-data";
+import { store, useStore, type ActionConfig } from "@/lib/store";
 
 export const Route = createFileRoute("/brand/campaigns/new")({
   head: () => ({ meta: [{ title: "New campaign — ViralSpace" }] }),
   component: NewCampaign,
 });
 
-interface ActionConfig {
-  type: ActionType;
-  summary: string;
-}
-
 function NewCampaign() {
   const nav = useNavigate();
+  const draft = useStore((s) => s.draft);
   const [step, setStep] = useState<"details" | "actions" | "checkout">("details");
-  const [details, setDetails] = useState({ title: "", description: "", link: "" });
-  const [actions, setActions] = useState<ActionConfig[]>([]);
   const [picker, setPicker] = useState(false);
   const [editing, setEditing] = useState<ActionType | null>(null);
 
-  const addAction = (type: ActionType, summary: string) => {
-    setActions((a) => [...a.filter((x) => x.type !== type), { type, summary }]);
+  const addAction = (cfg: ActionConfig) => {
+    store.setDraftActions([...draft.actions.filter((x) => x.type !== cfg.type), cfg]);
     setEditing(null);
   };
 
-  const total = actions.length * 199 + 49;
+  const total = draft.actions.length * 199 + 49;
 
   return (
     <div className="space-y-8">
@@ -36,6 +31,12 @@ function NewCampaign() {
           <ArrowLeft className="size-4" />
         </button>
         <h1 className="text-2xl font-bold tracking-tight">Create a campaign</h1>
+        <button
+          onClick={() => { store.resetDraft(); setStep("details"); }}
+          className="ml-auto text-xs font-medium text-muted-foreground hover:text-foreground"
+        >
+          Reset draft
+        </button>
       </div>
 
       <Stepper step={step} />
@@ -43,9 +44,9 @@ function NewCampaign() {
       {step === "details" && (
         <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
           <div className="space-y-4 rounded-3xl bg-card p-6 ring-1 ring-border/60">
-            <Input label="Campaign title" value={details.title} onChange={(v) => setDetails({ ...details, title: v })} placeholder="SoundWave Pro Earbuds" />
-            <Textarea label="Description" value={details.description} onChange={(v) => setDetails({ ...details, description: v })} placeholder="Tell creators what this campaign is about." />
-            <Input label="Product or landing link" value={details.link} onChange={(v) => setDetails({ ...details, link: v })} placeholder="https://" />
+            <Input label="Campaign title" value={draft.title} onChange={(v) => store.updateDraft({ title: v })} placeholder="SoundWave Pro Earbuds" />
+            <Textarea label="Description" value={draft.description} onChange={(v) => store.updateDraft({ description: v })} placeholder="Tell creators what this campaign is about." />
+            <Input label="Product or landing link" value={draft.link} onChange={(v) => store.updateDraft({ link: v })} placeholder="https://" />
 
             <div className="grid gap-3 sm:grid-cols-2">
               <Uploader label="Main image" />
@@ -53,12 +54,12 @@ function NewCampaign() {
             </div>
           </div>
           <aside className="rounded-3xl bg-card p-6 ring-1 ring-border/60">
-            <h3 className="font-semibold">Saved as draft</h3>
+            <h3 className="font-semibold">Auto-saved draft</h3>
             <p className="mt-1 text-sm text-muted-foreground">
-              Your campaign exists with no actions yet. Add at least one to publish.
+              Your campaign is saved locally as you type. Add at least one action to publish.
             </p>
             <button
-              disabled={!details.title}
+              disabled={!draft.title}
               onClick={() => setStep("actions")}
               className="mt-4 w-full rounded-xl bg-primary py-2.5 font-semibold text-primary-foreground shadow-sm transition hover:opacity-90 disabled:opacity-50"
             >
@@ -81,7 +82,7 @@ function NewCampaign() {
               </button>
             </div>
 
-            {actions.length === 0 ? (
+            {draft.actions.length === 0 ? (
               <button
                 onClick={() => setPicker(true)}
                 className="grid w-full place-items-center rounded-2xl border-2 border-dashed border-border py-12 text-muted-foreground hover:border-primary hover:text-foreground"
@@ -91,7 +92,7 @@ function NewCampaign() {
               </button>
             ) : (
               <ul className="space-y-2">
-                {actions.map((a) => (
+                {draft.actions.map((a) => (
                   <li key={a.type} className="flex items-center justify-between rounded-2xl bg-muted/50 p-3">
                     <div className="flex items-center gap-3">
                       <div className="w-28">
@@ -99,12 +100,20 @@ function NewCampaign() {
                       </div>
                       <span className="text-sm text-muted-foreground">{a.summary}</span>
                     </div>
-                    <button
-                      onClick={() => setActions(actions.filter((x) => x.type !== a.type))}
-                      className="rounded-lg p-1.5 hover:bg-background"
-                    >
-                      <X className="size-4" />
-                    </button>
+                    <div className="flex gap-1">
+                      <button
+                        onClick={() => { setEditing(a.type); setPicker(true); }}
+                        className="rounded-lg px-2 py-1 text-xs font-medium hover:bg-background"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => store.setDraftActions(draft.actions.filter((x) => x.type !== a.type))}
+                        className="rounded-lg p-1.5 hover:bg-background"
+                      >
+                        <X className="size-4" />
+                      </button>
+                    </div>
                   </li>
                 ))}
               </ul>
@@ -117,7 +126,7 @@ function NewCampaign() {
               Combine any actions. One campaign can have all four — or just one.
             </p>
             <button
-              disabled={actions.length === 0}
+              disabled={draft.actions.length === 0}
               onClick={() => setStep("checkout")}
               className="mt-4 w-full rounded-xl bg-primary py-2.5 font-semibold text-primary-foreground shadow-sm transition hover:opacity-90 disabled:opacity-50"
             >
@@ -136,9 +145,9 @@ function NewCampaign() {
                 <span>Base campaign listing</span>
                 <span className="font-semibold">$49.00</span>
               </li>
-              {actions.map((a) => (
+              {draft.actions.map((a) => (
                 <li key={a.type} className="flex items-center justify-between py-3 text-sm">
-                  <span className="capitalize">{a.type} module</span>
+                  <span className="capitalize">{a.type} module — {a.summary}</span>
                   <span className="font-semibold">$199.00</span>
                 </li>
               ))}
@@ -154,7 +163,7 @@ function NewCampaign() {
               Your campaign enters admin review. Once approved, it goes live to creators.
             </p>
             <button
-              onClick={() => nav({ to: "/brand" })}
+              onClick={() => { store.submitDraft(); nav({ to: "/brand" }); }}
               className="mt-4 w-full rounded-xl bg-primary py-2.5 font-semibold text-primary-foreground shadow-sm transition hover:opacity-90"
             >
               Pay ${total.toFixed(2)} and submit
@@ -164,7 +173,7 @@ function NewCampaign() {
       )}
 
       {picker && (
-        <Modal onClose={() => setPicker(false)} title="Add an action">
+        <Modal onClose={() => { setPicker(false); setEditing(null); }} title="Add an action">
           {editing === null ? (
             <>
               <p className="mb-4 text-sm text-muted-foreground">
@@ -184,9 +193,10 @@ function NewCampaign() {
           ) : (
             <ActionForm
               type={editing}
+              initial={draft.actions.find((a) => a.type === editing)?.data}
               onCancel={() => setEditing(null)}
-              onSave={(summary) => {
-                addAction(editing, summary);
+              onSave={(cfg) => {
+                addAction(cfg);
                 setPicker(false);
               }}
             />
@@ -243,14 +253,16 @@ function Modal({ title, onClose, children }: { title: string; onClose: () => voi
 
 function ActionForm({
   type,
+  initial,
   onSave,
   onCancel,
 }: {
   type: ActionType;
-  onSave: (summary: string) => void;
+  initial?: Record<string, string>;
+  onSave: (cfg: ActionConfig) => void;
   onCancel: () => void;
 }) {
-  const [state, setState] = useState<Record<string, string>>({});
+  const [state, setState] = useState<Record<string, string>>(initial ?? {});
   const fields = formFieldsFor(type);
 
   const summary = (() => {
@@ -292,7 +304,7 @@ function ActionForm({
         <button onClick={onCancel} className="rounded-lg px-4 py-2 text-sm font-semibold text-muted-foreground hover:bg-muted">
           Back
         </button>
-        <button onClick={() => onSave(summary)} className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90">
+        <button onClick={() => onSave({ type, summary, data: state })} className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90">
           Save action
         </button>
       </div>

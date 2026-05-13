@@ -1,15 +1,29 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { Sparkles } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 export const Route = createFileRoute("/login")({
   head: () => ({ meta: [{ title: "Log in — ViralSpace" }] }),
   component: Login,
 });
 
+function detectRole(email: string): "brand" | "affiliate" | "admin" {
+  const e = email.trim().toLowerCase();
+  if (!e) return "affiliate";
+  if (e.endsWith("@viralspace.app") || e.startsWith("admin")) return "admin";
+  const local = e.split("@")[0] ?? "";
+  const domain = e.split("@")[1]?.split(".")[0] ?? "";
+  const brandHints = ["brand", "team", "marketing", "company", "biz", "corp"];
+  if (brandHints.some((h) => local.includes(h) || domain.includes(h))) return "brand";
+  const consumer = ["gmail", "yahoo", "outlook", "hotmail", "icloud", "proton", "live", "me"];
+  if (consumer.includes(domain)) return "affiliate";
+  return "brand";
+}
+
 function Login() {
   const nav = useNavigate();
-  const [role, setRole] = useState<"brand" | "affiliate" | "admin">("brand");
+  const [email, setEmail] = useState("");
+  const role = useMemo(() => detectRole(email), [email]);
   return (
     <AuthShell title="Welcome back" subtitle="Log in to continue your campaigns.">
       <form
@@ -19,28 +33,14 @@ function Login() {
         }}
         className="space-y-4"
       >
-        <Field label="Email" type="email" placeholder="you@brand.com" />
+        <Field label="Email" type="email" placeholder="you@brand.com" value={email} onChange={(e) => setEmail(e.target.value)} />
         <Field label="Password" type="password" placeholder="••••••••" />
 
-        <div className="space-y-1.5">
-          <label className="text-sm font-medium">Continue as</label>
-          <div className="grid grid-cols-3 gap-2">
-            {(["brand", "affiliate", "admin"] as const).map((r) => (
-              <button
-                key={r}
-                type="button"
-                onClick={() => setRole(r)}
-                className={`rounded-lg border px-3 py-2 text-sm font-medium capitalize transition ${
-                  role === r
-                    ? "border-primary bg-secondary text-secondary-foreground"
-                    : "border-border bg-background text-muted-foreground hover:bg-muted"
-                }`}
-              >
-                {r}
-              </button>
-            ))}
-          </div>
-        </div>
+        {email && (
+          <p className="rounded-lg bg-muted/60 px-3 py-2 text-xs text-muted-foreground">
+            We'll sign you in as <span className="font-semibold capitalize text-foreground">{role}</span> based on your email.
+          </p>
+        )}
 
         <button className="w-full rounded-xl bg-primary py-3 font-semibold text-primary-foreground shadow-sm transition hover:opacity-90">
           Log in
