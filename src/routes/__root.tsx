@@ -72,14 +72,18 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "Lovable Generated Project" },
+      { title: "viralspace" },
+      { name: "description", content: "Campaign Creator Hub allows brands to build and launch marketing campaigns with customizable actions." },
       { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Lovable Generated Project" },
+      { property: "og:title", content: "viralspace" },
+      { property: "og:description", content: "Campaign Creator Hub allows brands to build and launch marketing campaigns with customizable actions." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "twitter:site", content: "@Lovable" },
+      { name: "twitter:title", content: "viralspace" },
+      { name: "twitter:description", content: "Campaign Creator Hub allows brands to build and launch marketing campaigns with customizable actions." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/1714f12e-eb83-406b-8e63-2d1e0fb8366a/id-preview-becb1df1--e4352770-deea-43de-92f2-3ffd5a129dfa.lovable.app-1778670011564.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/1714f12e-eb83-406b-8e63-2d1e0fb8366a/id-preview-becb1df1--e4352770-deea-43de-92f2-3ffd5a129dfa.lovable.app-1778670011564.png" },
     ],
     links: [
       {
