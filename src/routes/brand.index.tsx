@@ -1,16 +1,58 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Plus, ShoppingBag, TrendingUp, Users, Eye } from "lucide-react";
-import { mockCampaigns } from "@/lib/mock-data";
+import { useMemo, useState } from "react";
+import {
+  Area,
+  AreaChart,
+  CartesianGrid,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 import { ActionTile } from "@/components/ActionTile";
+import { useStore } from "@/lib/store";
 
 export const Route = createFileRoute("/brand/")({
   head: () => ({ meta: [{ title: "Campaigns — Brand dashboard" }] }),
   component: BrandHome,
 });
 
+type Range = "7d" | "30d" | "90d";
+type Metric = "visitors" | "conversion" | "earnings";
+
+function seedRandom(seed: number) {
+  let s = seed;
+  return () => {
+    s = (s * 9301 + 49297) % 233280;
+    return s / 233280;
+  };
+}
+
+function generateSeries(range: Range, metric: Metric) {
+  const days = range === "7d" ? 7 : range === "30d" ? 30 : 90;
+  const rand = seedRandom(metric.length * 17 + days);
+  const base = metric === "visitors" ? 800 : metric === "conversion" ? 4 : 120;
+  const variance = metric === "visitors" ? 600 : metric === "conversion" ? 2.5 : 90;
+  const out = [];
+  const today = new Date();
+  for (let i = days - 1; i >= 0; i--) {
+    const d = new Date(today);
+    d.setDate(today.getDate() - i);
+    out.push({
+      date: d.toLocaleDateString("en-US", { month: "short", day: "numeric" }),
+      value: Math.max(0, +(base + (rand() - 0.3) * variance).toFixed(2)),
+    });
+  }
+  return out;
+}
+
 function BrandHome() {
-  const mine = mockCampaigns.slice(0, 3);
-  const totals = mine.reduce(
+  const campaigns = useStore((s) => s.campaigns);
+  const [range, setRange] = useState<Range>("30d");
+  const [metric, setMetric] = useState<Metric>("visitors");
+
+  const totals = campaigns.reduce(
     (acc, c) => ({
       sales: acc.sales + c.stats.totalSales,
       visitors: acc.visitors + c.stats.visitors,
@@ -18,6 +60,14 @@ function BrandHome() {
     }),
     { sales: 0, visitors: 0, affiliates: 0 },
   );
+
+  const series = useMemo(() => generateSeries(range, metric), [range, metric]);
+  const metricMeta = {
+    visitors: { label: "Visitors", color: "var(--task)", suffix: "" },
+    conversion: { label: "Conversion rate", color: "var(--promote)", suffix: "%" },
+    earnings: { label: "Earnings", color: "var(--sales)", suffix: "$" },
+  }[metric];
+
   return (
     <div className="space-y-8">
       <div className="flex flex-wrap items-end justify-between gap-4">
@@ -40,6 +90,55 @@ function BrandHome() {
         <KpiCard label="Visitors" value={totals.visitors.toLocaleString()} icon={Eye} tint="bg-task-bg text-task-foreground" />
       </section>
 
+      <section className="rounded-3xl bg-card p-6 ring-1 ring-border/60">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 className="text-lg font-semibold">Performance</h2>
+            <p className="text-sm text-muted-foreground">Aggregated mock data across your campaigns.</p>
+          </div>
+          <div className="flex gap-2">
+            <SegGroup
+              value={metric}
+              onChange={(v) => setMetric(v as Metric)}
+              options={[
+                { value: "visitors", label: "Visitors" },
+                { value: "conversion", label: "Conversion" },
+                { value: "earnings", label: "Earnings" },
+              ]}
+            />
+            <SegGroup
+              value={range}
+              onChange={(v) => setRange(v as Range)}
+              options={[
+                { value: "7d", label: "7d" },
+                { value: "30d", label: "30d" },
+                { value: "90d", label: "90d" },
+              ]}
+            />
+          </div>
+        </div>
+        <div className="mt-5 h-72 w-full">
+          <ResponsiveContainer>
+            <AreaChart data={series} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+              <defs>
+                <linearGradient id="metricFill" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor={metricMeta.color} stopOpacity={0.35} />
+                  <stop offset="100%" stopColor={metricMeta.color} stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+              <XAxis dataKey="date" stroke="var(--muted-foreground)" fontSize={11} tickLine={false} axisLine={false} minTickGap={20} />
+              <YAxis stroke="var(--muted-foreground)" fontSize={11} tickLine={false} axisLine={false} width={40} />
+              <Tooltip
+                contentStyle={{ borderRadius: 12, border: "1px solid var(--border)", background: "var(--card)" }}
+                formatter={(v: number) => [`${metricMeta.suffix === "$" ? "$" : ""}${v}${metricMeta.suffix === "%" ? "%" : ""}`, metricMeta.label]}
+              />
+              <Area type="monotone" dataKey="value" stroke={metricMeta.color} strokeWidth={2} fill="url(#metricFill)" />
+            </AreaChart>
+          </ResponsiveContainer>
+        </div>
+      </section>
+
       <section className="space-y-3">
         <h2 className="text-lg font-semibold">All campaigns</h2>
         <div className="overflow-hidden rounded-2xl bg-card ring-1 ring-border/60">
@@ -53,7 +152,7 @@ function BrandHome() {
               </tr>
             </thead>
             <tbody>
-              {mockCampaigns.map((c) => (
+              {campaigns.map((c) => (
                 <tr key={c.id} className="border-t border-border/60">
                   <td className="px-5 py-3">
                     <div className="flex items-center gap-3">
@@ -87,11 +186,30 @@ function BrandHome() {
   );
 }
 
-function StatusBadge({ status }: { status: "draft" | "pending" | "live" }) {
-  const map = {
+function SegGroup({ value, onChange, options }: { value: string; onChange: (v: string) => void; options: { value: string; label: string }[] }) {
+  return (
+    <div className="inline-flex rounded-xl bg-muted p-1 text-xs">
+      {options.map((o) => (
+        <button
+          key={o.value}
+          onClick={() => onChange(o.value)}
+          className={`rounded-lg px-3 py-1.5 font-semibold transition ${
+            value === o.value ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"
+          }`}
+        >
+          {o.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function StatusBadge({ status }: { status: "draft" | "pending" | "live" | "rejected" }) {
+  const map: Record<string, string> = {
     live: "bg-success-bg text-promote-foreground",
     pending: "bg-task-bg text-task-foreground",
     draft: "bg-muted text-muted-foreground",
+    rejected: "bg-destructive/10 text-destructive",
   };
   return (
     <span className={`inline-flex rounded-md px-2 py-1 text-xs font-semibold capitalize ${map[status]}`}>
