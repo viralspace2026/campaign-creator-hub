@@ -262,12 +262,14 @@ function ActionForm({
   onCancel: () => void;
 }) {
   const [state, setState] = useState<Record<string, string>>(initial ?? {});
-  const fields = formFieldsFor(type);
+  const fields = formFieldsFor(type, state);
 
   const summary = (() => {
     switch (type) {
-      case "sales":
-        return `${state.kind || "Digital"} · $${state.price || "0"} · ${state.commission || "0%"} commission`;
+      case "sales": {
+        const cat = state.category ? ` · ${state.category}` : "";
+        return `${state.kind || "Digital"} · $${state.price || "0"} · ${state.commission || "0%"} commission${cat}`;
+      }
       case "promote":
         return `Budget $${state.budget || "0"} · ${state.plan || "Starter"} plan`;
       case "survey":
@@ -276,6 +278,9 @@ function ActionForm({
         return `${state.kind || "Referral"} · $${state.reward || "0"} per completion`;
     }
   })();
+
+  const isDigitalSales = type === "sales" && (state.kind === "Digital" || !state.kind);
+  const showFileUpload = isDigitalSales && state.deliveryType === "Upload File";
 
   return (
     <div className="space-y-4">
@@ -294,6 +299,28 @@ function ActionForm({
           ),
         )}
       </div>
+      {showFileUpload && (
+        <div className="rounded-xl border-2 border-dashed border-border bg-muted/30 p-5 text-center text-sm text-muted-foreground">
+          <p className="font-medium text-foreground">Upload digital product file</p>
+          <p className="mt-1 text-xs">Accepted: PDF, ZIP, PNG, JPG · max 100MB</p>
+          {state.fileName && (
+            <p className="mt-2 text-xs font-medium text-foreground">Selected: {state.fileName}</p>
+          )}
+          <label className="mt-3 inline-block cursor-pointer rounded-lg bg-secondary px-3 py-1.5 text-xs font-semibold text-secondary-foreground hover:bg-accent">
+            Choose file
+            <input
+              type="file"
+              accept=".pdf,.zip,image/png,image/jpeg"
+              className="hidden"
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) setState({ ...state, fileName: f.name });
+                e.target.value = "";
+              }}
+            />
+          </label>
+        </div>
+      )}
       {type === "survey" && (
         <p className="rounded-lg bg-survey-bg p-3 text-sm text-survey-foreground">
           Note: survey questions are written by the ViralSpace admin team after submission.
@@ -319,15 +346,49 @@ interface FormField {
   options?: string[];
 }
 
-function formFieldsFor(type: ActionType): FormField[] {
+const PRODUCT_CATEGORIES = [
+  "Audio & Music",
+  "Software & SaaS",
+  "E-books & Courses",
+  "Templates & Design",
+  "Photography",
+  "Video & Animation",
+  "Health & Fitness",
+  "Beauty & Skincare",
+  "Fashion & Apparel",
+  "Home & Lifestyle",
+  "Food & Beverage",
+  "Gaming",
+  "Finance & Crypto",
+  "Marketing & Business",
+  "Other",
+];
+
+const DELIVERY_TYPES = ["Upload File", "Google Drive Link", "Direct URL", "Dropbox Link"];
+
+function formFieldsFor(type: ActionType, state: Record<string, string> = {}): FormField[] {
   switch (type) {
-    case "sales":
-      return [
+    case "sales": {
+      const base: FormField[] = [
         { key: "kind", label: "Item type", type: "select", options: ["Digital", "Physical"] },
         { key: "price", label: "Price (USD)", type: "text", placeholder: "69.99" },
         { key: "commission", label: "Affiliate commission", type: "text", placeholder: "25%" },
-        { key: "category", label: "Category", type: "text", placeholder: "Audio" },
+        { key: "category", label: "Category", type: "select", options: PRODUCT_CATEGORIES },
       ];
+      const isDigital = state.kind === "Digital" || !state.kind;
+      if (!isDigital) return base;
+      const delivery: FormField[] = [
+        { key: "deliveryType", label: "Content delivery type", type: "select", options: DELIVERY_TYPES },
+      ];
+      if (state.deliveryType === "Google Drive Link") {
+        delivery.push({ key: "deliveryUrl", label: "Google Drive link", type: "text", placeholder: "https://drive.google.com/..." });
+      } else if (state.deliveryType === "Direct URL") {
+        delivery.push({ key: "deliveryUrl", label: "Direct URL", type: "text", placeholder: "https://yourdomain.com/file.zip" });
+      } else if (state.deliveryType === "Dropbox Link") {
+        delivery.push({ key: "deliveryUrl", label: "Dropbox link", type: "text", placeholder: "https://www.dropbox.com/..." });
+      }
+      return [...base, ...delivery];
+    }
     case "promote":
       return [
         { key: "budget", label: "Budget (USD)", type: "text", placeholder: "500" },
