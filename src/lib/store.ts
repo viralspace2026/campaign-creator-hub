@@ -98,6 +98,7 @@ export const store = {
       title: d.title || "Untitled campaign",
       description: d.description || "",
       image:
+        d.images[0] ||
         "https://images.unsplash.com/photo-1556761175-5973dc0f32e7?auto=format&fit=crop&w=900&q=80",
       productType: "Digital Product",
       price,
@@ -127,6 +128,9 @@ export const store = {
       if (cur.includes(type)) return s;
       return { ...s, joined: { ...s.joined, [campaignId]: [...cur, type] } };
     });
+  },
+  updateProfile(patch: Partial<Profile>) {
+    setState((s) => ({ ...s, profile: { ...s.profile, ...patch } }));
   },
 };
 
