@@ -271,9 +271,11 @@ function ActionForm({
         return `${state.kind || "Digital"} · $${state.price || "0"} · ${state.commission || "0%"} commission${cat}`;
       }
       case "promote":
-        return `Budget $${state.budget || "0"} · ${state.plan || "Starter"} plan`;
-      case "survey":
-        return `${state.responses || "100"} responses · $${state.reward || "0"} per participant`;
+        return `${state.plan || "Starter"} plan · $${state.amount || "0"} budget`;
+      case "survey": {
+        const quals = parseList(state.qualifications).length;
+        return `${state.responses || "100"} responses · $${state.reward || "0"}/participant${quals ? ` · ${quals} criteria` : ""}`;
+      }
       case "task":
         return `${state.kind || "Referral"} · $${state.reward || "0"} per completion`;
     }
@@ -290,15 +292,17 @@ function ActionForm({
         </div>
         <p className="text-sm text-muted-foreground">{actionMeta[type].description}</p>
       </div>
-      <div className="grid gap-3 sm:grid-cols-2">
-        {fields.map((f) =>
-          f.type === "select" ? (
-            <Select key={f.key} label={f.label} options={f.options!} value={state[f.key] || ""} onChange={(v) => setState({ ...state, [f.key]: v })} />
-          ) : (
-            <Input key={f.key} label={f.label} value={state[f.key] || ""} onChange={(v) => setState({ ...state, [f.key]: v })} placeholder={f.placeholder} />
-          ),
-        )}
-      </div>
+      {fields.length > 0 && (
+        <div className="grid gap-3 sm:grid-cols-2">
+          {fields.map((f) =>
+            f.type === "select" ? (
+              <Select key={f.key} label={f.label} options={f.options!} value={state[f.key] || ""} onChange={(v) => setState({ ...state, [f.key]: v })} />
+            ) : (
+              <Input key={f.key} label={f.label} value={state[f.key] || ""} onChange={(v) => setState({ ...state, [f.key]: v })} placeholder={f.placeholder} />
+            ),
+          )}
+        </div>
+      )}
       {showFileUpload && (
         <div className="rounded-xl border-2 border-dashed border-border bg-muted/30 p-5 text-center text-sm text-muted-foreground">
           <p className="font-medium text-foreground">Upload digital product file</p>
@@ -320,6 +324,17 @@ function ActionForm({
             />
           </label>
         </div>
+      )}
+      {type === "promote" && (
+        <PromotePlans
+          plan={state.plan || ""}
+          amount={state.amount || ""}
+          onPlan={(p, a) => setState({ ...state, plan: p, amount: a })}
+          onAmount={(a) => setState({ ...state, amount: a })}
+        />
+      )}
+      {type === "survey" && (
+        <SurveyQualifications state={state} setState={setState} />
       )}
       {type === "survey" && (
         <p className="rounded-lg bg-survey-bg p-3 text-sm text-survey-foreground">
@@ -390,10 +405,8 @@ function formFieldsFor(type: ActionType, state: Record<string, string> = {}): Fo
       return [...base, ...delivery];
     }
     case "promote":
-      return [
-        { key: "budget", label: "Budget (USD)", type: "text", placeholder: "500" },
-        { key: "plan", label: "Plan", type: "select", options: ["Starter", "Growth", "Scale"] },
-      ];
+      // Plan + amount handled by PromotePlans card UI below.
+      return [];
     case "survey":
       return [
         { key: "audience", label: "Target audience", type: "text", placeholder: "Gen Z, US, music fans" },
@@ -525,6 +538,279 @@ function ImageDropzone({ images, onChange }: { images: string[]; onChange: (imgs
             </li>
           ))}
         </ul>
+      )}
+    </div>
+  );
+}
+
+// ----- Promote: pricing plans + amount picker -----
+
+interface PromotePlan {
+  id: string;
+  name: string;
+  tagline: string;
+  basePrice: number;
+  amounts: number[];
+  features: string[];
+  badge?: string;
+}
+
+const PROMOTE_PLANS: PromotePlan[] = [
+  {
+    id: "Starter",
+    name: "Starter",
+    tagline: "Test the waters",
+    basePrice: 99,
+    amounts: [250, 500, 1000],
+    features: ["Up to 25 creators", "Basic targeting", "Standard reporting"],
+  },
+  {
+    id: "Growth",
+    name: "Growth",
+    tagline: "Most popular",
+    basePrice: 299,
+    amounts: [1000, 2500, 5000],
+    features: ["Up to 150 creators", "Audience targeting", "Realtime analytics", "Priority placement"],
+    badge: "Popular",
+  },
+  {
+    id: "Scale",
+    name: "Scale",
+    tagline: "For viral launches",
+    basePrice: 799,
+    amounts: [5000, 10000, 25000],
+    features: ["Unlimited creators", "Advanced targeting", "A/B creative tests", "Dedicated manager"],
+  },
+];
+
+function PromotePlans({
+  plan,
+  amount,
+  onPlan,
+  onAmount,
+}: {
+  plan: string;
+  amount: string;
+  onPlan: (plan: string, amount: string) => void;
+  onAmount: (amount: string) => void;
+}) {
+  const selected = PROMOTE_PLANS.find((p) => p.id === plan);
+  return (
+    <div className="space-y-3">
+      <div>
+        <span className="mb-1.5 block text-sm font-medium">Pick a plan</span>
+        <div className="grid gap-3 sm:grid-cols-3">
+          {PROMOTE_PLANS.map((p) => {
+            const active = p.id === plan;
+            return (
+              <button
+                key={p.id}
+                type="button"
+                onClick={() => onPlan(p.id, String(p.amounts[0]))}
+                className={`relative rounded-2xl p-4 text-left ring-1 transition ${
+                  active
+                    ? "bg-promote-bg text-promote-foreground ring-primary shadow-sm"
+                    : "bg-card text-foreground ring-border hover:ring-primary/40"
+                }`}
+              >
+                {p.badge && (
+                  <span className="absolute -top-2 right-3 rounded-full bg-primary px-2 py-0.5 text-[10px] font-bold text-primary-foreground">
+                    {p.badge}
+                  </span>
+                )}
+                <div className="text-sm font-bold">{p.name}</div>
+                <div className="text-xs opacity-80">{p.tagline}</div>
+                <div className="mt-2 text-lg font-bold">${p.basePrice}<span className="text-xs font-medium opacity-70"> base</span></div>
+                <ul className="mt-2 space-y-1 text-xs">
+                  {p.features.map((f) => (
+                    <li key={f} className="flex items-start gap-1.5">
+                      <Check className="mt-0.5 size-3 shrink-0" /> <span>{f}</span>
+                    </li>
+                  ))}
+                </ul>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+      {selected && (
+        <div>
+          <span className="mb-1.5 block text-sm font-medium">Campaign amount</span>
+          <div className="flex flex-wrap gap-2">
+            {selected.amounts.map((a) => {
+              const active = String(a) === amount;
+              return (
+                <button
+                  key={a}
+                  type="button"
+                  onClick={() => onAmount(String(a))}
+                  className={`rounded-lg px-3 py-1.5 text-sm font-semibold transition ${
+                    active ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-accent"
+                  }`}
+                >
+                  ${a.toLocaleString()}
+                </button>
+              );
+            })}
+            <input
+              type="text"
+              value={selected.amounts.includes(Number(amount)) ? "" : amount}
+              onChange={(e) => onAmount(e.target.value)}
+              placeholder="Custom $"
+              className="w-28 rounded-lg border border-input bg-background px-3 py-1.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-ring/30"
+            />
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ----- Survey: advanced affiliate qualification criteria -----
+
+const SURVEY_NICHES = [
+  "Beauty", "Fashion", "Tech", "Gaming", "Fitness", "Food",
+  "Travel", "Finance", "Parenting", "Music", "Lifestyle", "Education",
+];
+const SURVEY_PLATFORMS = ["TikTok", "Instagram", "YouTube", "X / Twitter", "Twitch", "LinkedIn"];
+const SURVEY_GENDERS = ["Any", "Female", "Male", "Non-binary"];
+
+function parseList(v?: string): string[] {
+  return v ? v.split(",").map((s) => s.trim()).filter(Boolean) : [];
+}
+function toggleInList(list: string[], item: string): string[] {
+  return list.includes(item) ? list.filter((x) => x !== item) : [...list, item];
+}
+
+function SurveyQualifications({
+  state,
+  setState,
+}: {
+  state: Record<string, string>;
+  setState: (s: Record<string, string>) => void;
+}) {
+  const niches = parseList(state.qualNiches);
+  const platforms = parseList(state.qualPlatforms);
+  const set = (patch: Record<string, string>) => setState({ ...state, ...patch });
+  const qualifications = [
+    state.qualAgeMin && state.qualAgeMax && `${state.qualAgeMin}-${state.qualAgeMax} yrs`,
+    state.qualGender && state.qualGender !== "Any" && state.qualGender,
+    state.qualLocation,
+    state.qualMinFollowers && `${state.qualMinFollowers}+ followers`,
+    platforms.length && platforms.join("/"),
+    niches.length && niches.join("/"),
+    state.qualVerified === "yes" && "Verified",
+  ].filter(Boolean);
+
+  // keep summary count fresh
+  if (state.qualifications !== qualifications.join(", ")) {
+    queueMicrotask(() => set({ qualifications: qualifications.join(", ") }));
+  }
+
+  return (
+    <div className="space-y-4 rounded-2xl bg-survey-bg/40 p-4 ring-1 ring-survey-bg">
+      <div>
+        <h4 className="text-sm font-bold">Affiliate qualification criteria</h4>
+        <p className="text-xs text-muted-foreground">Only creators matching these requirements will see and join the survey.</p>
+      </div>
+
+      <div className="grid gap-3 sm:grid-cols-2">
+        <div>
+          <span className="mb-1.5 block text-sm font-medium">Age range</span>
+          <div className="flex items-center gap-2">
+            <input
+              type="number" min={13} max={99}
+              value={state.qualAgeMin || ""}
+              onChange={(e) => set({ qualAgeMin: e.target.value })}
+              placeholder="18"
+              className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-ring/30"
+            />
+            <span className="text-muted-foreground">—</span>
+            <input
+              type="number" min={13} max={99}
+              value={state.qualAgeMax || ""}
+              onChange={(e) => set({ qualAgeMax: e.target.value })}
+              placeholder="35"
+              className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-ring/30"
+            />
+          </div>
+        </div>
+        <Select
+          label="Gender"
+          options={SURVEY_GENDERS}
+          value={state.qualGender || ""}
+          onChange={(v) => set({ qualGender: v })}
+        />
+        <Input
+          label="Location"
+          value={state.qualLocation || ""}
+          onChange={(v) => set({ qualLocation: v })}
+          placeholder="US, UK, Canada"
+        />
+        <Input
+          label="Minimum followers"
+          value={state.qualMinFollowers || ""}
+          onChange={(v) => set({ qualMinFollowers: v })}
+          placeholder="5000"
+        />
+      </div>
+
+      <div>
+        <span className="mb-1.5 block text-sm font-medium">Platforms</span>
+        <div className="flex flex-wrap gap-2">
+          {SURVEY_PLATFORMS.map((p) => {
+            const active = platforms.includes(p);
+            return (
+              <button
+                key={p}
+                type="button"
+                onClick={() => set({ qualPlatforms: toggleInList(platforms, p).join(",") })}
+                className={`rounded-full px-3 py-1 text-xs font-semibold transition ${
+                  active ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-accent"
+                }`}
+              >
+                {p}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      <div>
+        <span className="mb-1.5 block text-sm font-medium">Niches / interests</span>
+        <div className="flex flex-wrap gap-2">
+          {SURVEY_NICHES.map((n) => {
+            const active = niches.includes(n);
+            return (
+              <button
+                key={n}
+                type="button"
+                onClick={() => set({ qualNiches: toggleInList(niches, n).join(",") })}
+                className={`rounded-full px-3 py-1 text-xs font-semibold transition ${
+                  active ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-accent"
+                }`}
+              >
+                {n}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      <label className="flex items-center gap-2 text-sm">
+        <input
+          type="checkbox"
+          checked={state.qualVerified === "yes"}
+          onChange={(e) => set({ qualVerified: e.target.checked ? "yes" : "" })}
+          className="size-4 rounded border-input"
+        />
+        Require verified creators only
+      </label>
+
+      {qualifications.length > 0 && (
+        <p className="rounded-lg bg-card px-3 py-2 text-xs text-muted-foreground">
+          <span className="font-semibold text-foreground">Active filters:</span> {qualifications.join(" · ")}
+        </p>
       )}
     </div>
   );
