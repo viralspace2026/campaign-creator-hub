@@ -271,9 +271,11 @@ function ActionForm({
         return `${state.kind || "Digital"} · $${state.price || "0"} · ${state.commission || "0%"} commission${cat}`;
       }
       case "promote":
-        return `Budget $${state.budget || "0"} · ${state.plan || "Starter"} plan`;
-      case "survey":
-        return `${state.responses || "100"} responses · $${state.reward || "0"} per participant`;
+        return `${state.plan || "Starter"} plan · $${state.amount || "0"} budget`;
+      case "survey": {
+        const quals = parseList(state.qualifications).length;
+        return `${state.responses || "100"} responses · $${state.reward || "0"}/participant${quals ? ` · ${quals} criteria` : ""}`;
+      }
       case "task":
         return `${state.kind || "Referral"} · $${state.reward || "0"} per completion`;
     }
@@ -290,15 +292,17 @@ function ActionForm({
         </div>
         <p className="text-sm text-muted-foreground">{actionMeta[type].description}</p>
       </div>
-      <div className="grid gap-3 sm:grid-cols-2">
-        {fields.map((f) =>
-          f.type === "select" ? (
-            <Select key={f.key} label={f.label} options={f.options!} value={state[f.key] || ""} onChange={(v) => setState({ ...state, [f.key]: v })} />
-          ) : (
-            <Input key={f.key} label={f.label} value={state[f.key] || ""} onChange={(v) => setState({ ...state, [f.key]: v })} placeholder={f.placeholder} />
-          ),
-        )}
-      </div>
+      {fields.length > 0 && (
+        <div className="grid gap-3 sm:grid-cols-2">
+          {fields.map((f) =>
+            f.type === "select" ? (
+              <Select key={f.key} label={f.label} options={f.options!} value={state[f.key] || ""} onChange={(v) => setState({ ...state, [f.key]: v })} />
+            ) : (
+              <Input key={f.key} label={f.label} value={state[f.key] || ""} onChange={(v) => setState({ ...state, [f.key]: v })} placeholder={f.placeholder} />
+            ),
+          )}
+        </div>
+      )}
       {showFileUpload && (
         <div className="rounded-xl border-2 border-dashed border-border bg-muted/30 p-5 text-center text-sm text-muted-foreground">
           <p className="font-medium text-foreground">Upload digital product file</p>
@@ -320,6 +324,17 @@ function ActionForm({
             />
           </label>
         </div>
+      )}
+      {type === "promote" && (
+        <PromotePlans
+          plan={state.plan || ""}
+          amount={state.amount || ""}
+          onPlan={(p, a) => setState({ ...state, plan: p, amount: a })}
+          onAmount={(a) => setState({ ...state, amount: a })}
+        />
+      )}
+      {type === "survey" && (
+        <SurveyQualifications state={state} setState={setState} />
       )}
       {type === "survey" && (
         <p className="rounded-lg bg-survey-bg p-3 text-sm text-survey-foreground">
