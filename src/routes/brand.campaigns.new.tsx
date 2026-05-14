@@ -46,12 +46,11 @@ function NewCampaign() {
           <div className="space-y-4 rounded-3xl bg-card p-6 ring-1 ring-border/60">
             <Input label="Campaign title" value={draft.title} onChange={(v) => store.updateDraft({ title: v })} placeholder="SoundWave Pro Earbuds" />
             <Textarea label="Description" value={draft.description} onChange={(v) => store.updateDraft({ description: v })} placeholder="Tell creators what this campaign is about." />
-            <Input label="Product or landing link" value={draft.link} onChange={(v) => store.updateDraft({ link: v })} placeholder="https://" />
 
-            <div className="grid gap-3 sm:grid-cols-2">
-              <Uploader label="Main image" />
-              <Uploader label="Preview gallery" hint="Up to 6 images" />
-            </div>
+            <ImageDropzone
+              images={draft.images}
+              onChange={(imgs) => store.updateDraft({ images: imgs })}
+            />
           </div>
           <aside className="rounded-3xl bg-card p-6 ring-1 ring-border/60">
             <h3 className="font-semibold">Auto-saved draft</h3>
