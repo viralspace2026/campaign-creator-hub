@@ -405,10 +405,8 @@ function formFieldsFor(type: ActionType, state: Record<string, string> = {}): Fo
       return [...base, ...delivery];
     }
     case "promote":
-      return [
-        { key: "budget", label: "Budget (USD)", type: "text", placeholder: "500" },
-        { key: "plan", label: "Plan", type: "select", options: ["Starter", "Growth", "Scale"] },
-      ];
+      // Plan + amount handled by PromotePlans card UI below.
+      return [];
     case "survey":
       return [
         { key: "audience", label: "Target audience", type: "text", placeholder: "Gen Z, US, music fans" },
