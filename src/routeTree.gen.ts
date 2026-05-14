@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as BrandRouteImport } from './routes/brand'
 import { Route as AffiliateRouteImport } from './routes/affiliate'
@@ -22,6 +23,11 @@ import { Route as AffiliateEarningsRouteImport } from './routes/affiliate.earnin
 import { Route as BrandCampaignsNewRouteImport } from './routes/brand.campaigns.new'
 import { Route as AffiliateCampaignsIdRouteImport } from './routes/affiliate.campaigns.$id'
 
+const ProfileRoute = ProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
@@ -89,6 +95,7 @@ export interface FileRoutesByFullPath {
   '/affiliate': typeof AffiliateRouteWithChildren
   '/brand': typeof BrandRouteWithChildren
   '/login': typeof LoginRoute
+  '/profile': typeof ProfileRoute
   '/affiliate/earnings': typeof AffiliateEarningsRoute
   '/signup/affiliate': typeof SignupAffiliateRoute
   '/signup/brand': typeof SignupBrandRoute
@@ -101,6 +108,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/login': typeof LoginRoute
+  '/profile': typeof ProfileRoute
   '/affiliate/earnings': typeof AffiliateEarningsRoute
   '/signup/affiliate': typeof SignupAffiliateRoute
   '/signup/brand': typeof SignupBrandRoute
@@ -116,6 +124,7 @@ export interface FileRoutesById {
   '/affiliate': typeof AffiliateRouteWithChildren
   '/brand': typeof BrandRouteWithChildren
   '/login': typeof LoginRoute
+  '/profile': typeof ProfileRoute
   '/affiliate/earnings': typeof AffiliateEarningsRoute
   '/signup/affiliate': typeof SignupAffiliateRoute
   '/signup/brand': typeof SignupBrandRoute
@@ -132,6 +141,7 @@ export interface FileRouteTypes {
     | '/affiliate'
     | '/brand'
     | '/login'
+    | '/profile'
     | '/affiliate/earnings'
     | '/signup/affiliate'
     | '/signup/brand'
@@ -144,6 +154,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/login'
+    | '/profile'
     | '/affiliate/earnings'
     | '/signup/affiliate'
     | '/signup/brand'
@@ -158,6 +169,7 @@ export interface FileRouteTypes {
     | '/affiliate'
     | '/brand'
     | '/login'
+    | '/profile'
     | '/affiliate/earnings'
     | '/signup/affiliate'
     | '/signup/brand'
@@ -173,12 +185,20 @@ export interface RootRouteChildren {
   AffiliateRoute: typeof AffiliateRouteWithChildren
   BrandRoute: typeof BrandRouteWithChildren
   LoginRoute: typeof LoginRoute
+  ProfileRoute: typeof ProfileRoute
   SignupAffiliateRoute: typeof SignupAffiliateRoute
   SignupBrandRoute: typeof SignupBrandRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/profile': {
+      id: '/profile'
+      path: '/profile'
+      fullPath: '/profile'
+      preLoaderRoute: typeof ProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/login': {
       id: '/login'
       path: '/login'
@@ -300,6 +320,7 @@ const rootRouteChildren: RootRouteChildren = {
   AffiliateRoute: AffiliateRouteWithChildren,
   BrandRoute: BrandRouteWithChildren,
   LoginRoute: LoginRoute,
+  ProfileRoute: ProfileRoute,
   SignupAffiliateRoute: SignupAffiliateRoute,
   SignupBrandRoute: SignupBrandRoute,
 }

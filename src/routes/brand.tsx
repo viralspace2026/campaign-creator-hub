@@ -9,6 +9,7 @@ export const Route = createFileRoute("/brand")({
       nav={[
         { to: "/brand", label: "Campaigns" },
         { to: "/brand/campaigns/new", label: "Create campaign" },
+        { to: "/profile", label: "Profile" },
       ]}
     />
   ),

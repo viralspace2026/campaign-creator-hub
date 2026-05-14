@@ -18,28 +18,43 @@ export interface StoredCampaign extends Omit<Campaign, "status" | "actions"> {
 export interface CampaignDraft {
   title: string;
   description: string;
-  link: string;
+  images: string[]; // data URLs, max 6
   actions: ActionConfig[];
+}
+
+export interface Profile {
+  name: string;
+  email: string;
+  bio: string;
+  avatar: string; // data URL
+  role: "Brand" | "Affiliate" | "Admin";
 }
 
 interface State {
   campaigns: StoredCampaign[];
   draft: CampaignDraft;
   joined: Record<string, ActionType[]>; // campaignId -> joined action types
+  profile: Profile;
 }
 
-const KEY = "viralspace-state-v1";
-const emptyDraft: CampaignDraft = { title: "", description: "", link: "", actions: [] };
+const KEY = "viralspace-state-v2";
+const emptyDraft: CampaignDraft = { title: "", description: "", images: [], actions: [] };
+const defaultProfile: Profile = {
+  name: "Aurelia Audio",
+  email: "team@aurelia.co",
+  bio: "Building joyful audio experiences.",
+  avatar: "",
+  role: "Brand",
+};
 
 function load(): State {
-  if (typeof window === "undefined") {
-    return { campaigns: mockCampaigns as StoredCampaign[], draft: emptyDraft, joined: {} };
-  }
+  const base = { campaigns: mockCampaigns as StoredCampaign[], draft: emptyDraft, joined: {}, profile: defaultProfile };
+  if (typeof window === "undefined") return base;
   try {
     const raw = localStorage.getItem(KEY);
-    if (raw) return JSON.parse(raw);
+    if (raw) return { ...base, ...JSON.parse(raw) };
   } catch {}
-  return { campaigns: mockCampaigns as StoredCampaign[], draft: emptyDraft, joined: {} };
+  return base;
 }
 
 let state: State = load();
@@ -83,6 +98,7 @@ export const store = {
       title: d.title || "Untitled campaign",
       description: d.description || "",
       image:
+        d.images[0] ||
         "https://images.unsplash.com/photo-1556761175-5973dc0f32e7?auto=format&fit=crop&w=900&q=80",
       productType: "Digital Product",
       price,
@@ -112,6 +128,9 @@ export const store = {
       if (cur.includes(type)) return s;
       return { ...s, joined: { ...s.joined, [campaignId]: [...cur, type] } };
     });
+  },
+  updateProfile(patch: Partial<Profile>) {
+    setState((s) => ({ ...s, profile: { ...s.profile, ...patch } }));
   },
 };
 

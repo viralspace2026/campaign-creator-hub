@@ -46,12 +46,11 @@ function NewCampaign() {
           <div className="space-y-4 rounded-3xl bg-card p-6 ring-1 ring-border/60">
             <Input label="Campaign title" value={draft.title} onChange={(v) => store.updateDraft({ title: v })} placeholder="SoundWave Pro Earbuds" />
             <Textarea label="Description" value={draft.description} onChange={(v) => store.updateDraft({ description: v })} placeholder="Tell creators what this campaign is about." />
-            <Input label="Product or landing link" value={draft.link} onChange={(v) => store.updateDraft({ link: v })} placeholder="https://" />
 
-            <div className="grid gap-3 sm:grid-cols-2">
-              <Uploader label="Main image" />
-              <Uploader label="Preview gallery" hint="Up to 6 images" />
-            </div>
+            <ImageDropzone
+              images={draft.images}
+              onChange={(imgs) => store.updateDraft({ images: imgs })}
+            />
           </div>
           <aside className="rounded-3xl bg-card p-6 ring-1 ring-border/60">
             <h3 className="font-semibold">Auto-saved draft</h3>
@@ -396,14 +395,77 @@ function Select({ label, options, value, onChange }: { label: string; options: s
   );
 }
 
-function Uploader({ label, hint }: { label: string; hint?: string }) {
+function ImageDropzone({ images, onChange }: { images: string[]; onChange: (imgs: string[]) => void }) {
+  const MAX = 6;
+  const [drag, setDrag] = useState(false);
+  const inputRef = (typeof window !== "undefined" ? { current: null as HTMLInputElement | null } : { current: null });
+
+  const readFiles = (files: FileList | File[]) => {
+    const remaining = MAX - images.length;
+    const slice = Array.from(files).filter((f) => f.type.startsWith("image/")).slice(0, remaining);
+    Promise.all(
+      slice.map(
+        (f) =>
+          new Promise<string>((resolve) => {
+            const r = new FileReader();
+            r.onload = () => resolve(String(r.result));
+            r.readAsDataURL(f);
+          }),
+      ),
+    ).then((urls) => onChange([...images, ...urls]));
+  };
+
   return (
     <div>
-      <span className="mb-1.5 block text-sm font-medium">{label}</span>
-      <div className="grid place-items-center rounded-xl border-2 border-dashed border-border bg-muted/30 p-6 text-center text-sm text-muted-foreground">
-        <span>Drag & drop or click to upload</span>
-        {hint && <span className="text-xs">{hint}</span>}
+      <div className="mb-1.5 flex items-center justify-between">
+        <span className="block text-sm font-medium">Campaign images</span>
+        <span className="text-xs text-muted-foreground">{images.length}/{MAX}</span>
       </div>
+      <label
+        onDragOver={(e) => { e.preventDefault(); setDrag(true); }}
+        onDragLeave={() => setDrag(false)}
+        onDrop={(e) => {
+          e.preventDefault();
+          setDrag(false);
+          if (images.length >= MAX) return;
+          readFiles(e.dataTransfer.files);
+        }}
+        className={`flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed p-8 text-center text-sm transition ${
+          drag ? "border-primary bg-primary/5 text-foreground" : "border-border bg-muted/30 text-muted-foreground hover:border-primary/60"
+        } ${images.length >= MAX ? "pointer-events-none opacity-60" : ""}`}
+      >
+        <input
+          type="file"
+          accept="image/*"
+          multiple
+          className="hidden"
+          ref={(el) => { inputRef.current = el; }}
+          onChange={(e) => { if (e.target.files) readFiles(e.target.files); e.target.value = ""; }}
+        />
+        <span className="font-medium">{images.length >= MAX ? "Maximum reached" : "Drag & drop images, or click to browse"}</span>
+        <span className="mt-1 text-xs">Up to {MAX} images · main image is the first one</span>
+      </label>
+
+      {images.length > 0 && (
+        <ul className="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-6">
+          {images.map((src, i) => (
+            <li key={i} className="group relative aspect-square overflow-hidden rounded-lg ring-1 ring-border">
+              <img src={src} alt={`upload-${i}`} className="h-full w-full object-cover" />
+              {i === 0 && (
+                <span className="absolute left-1 top-1 rounded bg-primary px-1.5 py-0.5 text-[10px] font-bold text-primary-foreground">Main</span>
+              )}
+              <button
+                type="button"
+                onClick={(e) => { e.preventDefault(); onChange(images.filter((_, idx) => idx !== i)); }}
+                className="absolute right-1 top-1 grid size-5 place-items-center rounded-full bg-foreground/70 text-background opacity-0 transition group-hover:opacity-100"
+              >
+                <X className="size-3" />
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }
+
