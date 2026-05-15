@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Plus, ShoppingBag, TrendingUp, Users, Eye } from "lucide-react";
+import { Plus, ShoppingBag, TrendingUp, Users, Eye, Copy, Check, X } from "lucide-react";
 import { useMemo, useState } from "react";
 import {
   Area,
@@ -12,6 +12,8 @@ import {
 } from "recharts";
 import { ActionTile } from "@/components/ActionTile";
 import { useStore } from "@/lib/store";
+import { actionMeta, type ActionType } from "@/lib/mock-data";
+import type { StoredCampaign } from "@/lib/store";
 
 export const Route = createFileRoute("/brand/")({
   head: () => ({ meta: [{ title: "Campaigns — Brand dashboard" }] }),
