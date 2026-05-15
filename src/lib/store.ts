@@ -34,6 +34,7 @@ interface State {
   campaigns: StoredCampaign[];
   draft: CampaignDraft;
   joined: Record<string, ActionType[]>; // campaignId -> joined action types
+  affiliateLinks: Record<string, string>; // campaignId -> unique referral code
   profile: Profile;
 }
 
@@ -48,7 +49,7 @@ const defaultProfile: Profile = {
 };
 
 function load(): State {
-  const base = { campaigns: mockCampaigns as StoredCampaign[], draft: emptyDraft, joined: {}, profile: defaultProfile };
+  const base: State = { campaigns: mockCampaigns as StoredCampaign[], draft: emptyDraft, joined: {}, affiliateLinks: {}, profile: defaultProfile };
   if (typeof window === "undefined") return base;
   try {
     const raw = localStorage.getItem(KEY);
@@ -128,6 +129,13 @@ export const store = {
       if (cur.includes(type)) return s;
       return { ...s, joined: { ...s.joined, [campaignId]: [...cur, type] } };
     });
+  },
+  getOrCreateAffiliateLink(campaignId: string): string {
+    const existing = state.affiliateLinks[campaignId];
+    if (existing) return existing;
+    const code = Math.random().toString(36).slice(2, 8) + Math.random().toString(36).slice(2, 6);
+    setState((s) => ({ ...s, affiliateLinks: { ...s.affiliateLinks, [campaignId]: code } }));
+    return code;
   },
   updateProfile(patch: Partial<Profile>) {
     setState((s) => ({ ...s, profile: { ...s.profile, ...patch } }));

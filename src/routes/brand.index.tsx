@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Plus, ShoppingBag, TrendingUp, Users, Eye } from "lucide-react";
+import { Plus, ShoppingBag, TrendingUp, Users, Eye, Copy, Check, X } from "lucide-react";
 import { useMemo, useState } from "react";
 import {
   Area,
@@ -12,6 +12,8 @@ import {
 } from "recharts";
 import { ActionTile } from "@/components/ActionTile";
 import { useStore } from "@/lib/store";
+import { actionMeta, type ActionType } from "@/lib/mock-data";
+import type { StoredCampaign } from "@/lib/store";
 
 export const Route = createFileRoute("/brand/")({
   head: () => ({ meta: [{ title: "Campaigns — Brand dashboard" }] }),
@@ -51,6 +53,17 @@ function BrandHome() {
   const campaigns = useStore((s) => s.campaigns);
   const [range, setRange] = useState<Range>("30d");
   const [metric, setMetric] = useState<Metric>("visitors");
+  const [actionView, setActionView] = useState<{ campaign: StoredCampaign; action: ActionType } | null>(null);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  const previewLinkFor = (id: string) =>
+    `${typeof window !== "undefined" ? window.location.origin : "https://viral.space"}/affiliate/campaigns/${id}`;
+
+  const copyPreview = (id: string) => {
+    navigator.clipboard?.writeText(previewLinkFor(id));
+    setCopiedId(id);
+    setTimeout(() => setCopiedId(null), 1500);
+  };
 
   const totals = campaigns.reduce(
     (acc, c) => ({
@@ -148,6 +161,7 @@ function BrandHome() {
                 <th className="px-5 py-3">Campaign</th>
                 <th className="px-5 py-3">Status</th>
                 <th className="px-5 py-3">Actions</th>
+                <th className="px-5 py-3">Preview link</th>
                 <th className="px-5 py-3 text-right">Sales</th>
               </tr>
             </thead>
@@ -170,10 +184,24 @@ function BrandHome() {
                     <div className="flex flex-wrap gap-1.5">
                       {c.actions.map((a) => (
                         <div key={a} className="w-24">
-                          <ActionTile type={a} size="sm" />
+                          <ActionTile
+                            type={a}
+                            size="sm"
+                            onClick={() => setActionView({ campaign: c, action: a })}
+                          />
                         </div>
                       ))}
                     </div>
+                  </td>
+                  <td className="px-5 py-3">
+                    <button
+                      onClick={() => copyPreview(c.id)}
+                      className="inline-flex items-center gap-1.5 rounded-lg bg-muted px-2.5 py-1.5 text-xs font-semibold text-muted-foreground hover:bg-accent hover:text-foreground"
+                      title={previewLinkFor(c.id)}
+                    >
+                      {copiedId === c.id ? <Check className="size-3.5" /> : <Copy className="size-3.5" />}
+                      {copiedId === c.id ? "Copied" : "Copy link"}
+                    </button>
                   </td>
                   <td className="px-5 py-3 text-right font-semibold">{c.stats.totalSales.toLocaleString()}</td>
                 </tr>
@@ -182,6 +210,127 @@ function BrandHome() {
           </table>
         </div>
       </section>
+
+      {actionView && (
+        <ActionAnalyticsDialog
+          campaign={actionView.campaign}
+          action={actionView.action}
+          onClose={() => setActionView(null)}
+        />
+      )}
+    </div>
+  );
+}
+
+function ActionAnalyticsDialog({
+  campaign,
+  action,
+  onClose,
+}: {
+  campaign: StoredCampaign;
+  action: ActionType;
+  onClose: () => void;
+}) {
+  const [range, setRange] = useState<Range>("30d");
+  const meta = actionMeta[action];
+
+  // Derive per-action splits from campaign stats with deterministic weighting.
+  const weight: Record<ActionType, number> = { sales: 0.45, promote: 0.25, survey: 0.15, task: 0.15 };
+  const total = campaign.actions.reduce((s, a) => s + weight[a], 0) || 1;
+  const share = weight[action] / total;
+  const visitors = Math.round(campaign.stats.visitors * share);
+  const sales = Math.round(campaign.stats.totalSales * share);
+  const affiliates = Math.round(campaign.stats.affiliates * share);
+  const conv = visitors > 0 ? ((sales / visitors) * 100).toFixed(2) : "0.00";
+
+  const series = useMemo(() => {
+    const rand = seedRandom(action.length * 11 + range.length * 7 + campaign.id.length);
+    const days = range === "7d" ? 7 : range === "30d" ? 30 : 90;
+    const base = visitors / days;
+    const today = new Date();
+    return Array.from({ length: days }, (_, i) => {
+      const d = new Date(today);
+      d.setDate(today.getDate() - (days - 1 - i));
+      return {
+        date: d.toLocaleDateString("en-US", { month: "short", day: "numeric" }),
+        value: Math.max(0, +(base * (0.6 + rand() * 0.9)).toFixed(2)),
+      };
+    });
+  }, [action, range, campaign.id, visitors]);
+
+  return (
+    <div className="fixed inset-0 z-50 grid place-items-center bg-foreground/30 p-4" onClick={onClose}>
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="max-h-[90vh] w-full max-w-3xl overflow-auto rounded-3xl bg-card p-6 shadow-2xl ring-1 ring-border"
+      >
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="w-28">
+              <ActionTile type={action} size="sm" />
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold">
+                {meta.label} performance — <span className="text-muted-foreground">{campaign.title}</span>
+              </h3>
+              <p className="text-sm text-muted-foreground">{meta.description}</p>
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            className="rounded-lg p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+            aria-label="Close"
+          >
+            <X className="size-4" />
+          </button>
+        </div>
+
+        <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <MiniStat label="Visitors" value={visitors.toLocaleString()} />
+          <MiniStat label="Conversion" value={`${conv}%`} />
+          <MiniStat label="Affiliates" value={affiliates.toLocaleString()} />
+          <MiniStat label={action === "sales" ? "Sales" : action === "task" ? "Submissions" : action === "survey" ? "Responses" : "Engagements"} value={sales.toLocaleString()} />
+        </div>
+
+        <div className="mt-5 flex items-center justify-between">
+          <h4 className="text-sm font-semibold">Trend</h4>
+          <SegGroup
+            value={range}
+            onChange={(v) => setRange(v as Range)}
+            options={[
+              { value: "7d", label: "7d" },
+              { value: "30d", label: "30d" },
+              { value: "90d", label: "90d" },
+            ]}
+          />
+        </div>
+        <div className="mt-3 h-64 w-full">
+          <ResponsiveContainer>
+            <AreaChart data={series} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+              <defs>
+                <linearGradient id={`fill-${action}`} x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor={`var(--${action})`} stopOpacity={0.4} />
+                  <stop offset="100%" stopColor={`var(--${action})`} stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+              <XAxis dataKey="date" stroke="var(--muted-foreground)" fontSize={11} tickLine={false} axisLine={false} minTickGap={20} />
+              <YAxis stroke="var(--muted-foreground)" fontSize={11} tickLine={false} axisLine={false} width={40} />
+              <Tooltip contentStyle={{ borderRadius: 12, border: "1px solid var(--border)", background: "var(--card)" }} />
+              <Area type="monotone" dataKey="value" stroke={`var(--${action})`} strokeWidth={2} fill={`url(#fill-${action})`} />
+            </AreaChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function MiniStat({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-xl bg-muted/60 p-3">
+      <div className="text-xs text-muted-foreground">{label}</div>
+      <div className="text-lg font-bold">{value}</div>
     </div>
   );
 }
