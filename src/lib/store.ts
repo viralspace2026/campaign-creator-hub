@@ -130,6 +130,13 @@ export const store = {
       return { ...s, joined: { ...s.joined, [campaignId]: [...cur, type] } };
     });
   },
+  getOrCreateAffiliateLink(campaignId: string): string {
+    const existing = state.affiliateLinks[campaignId];
+    if (existing) return existing;
+    const code = Math.random().toString(36).slice(2, 8) + Math.random().toString(36).slice(2, 6);
+    setState((s) => ({ ...s, affiliateLinks: { ...s.affiliateLinks, [campaignId]: code } }));
+    return code;
+  },
   updateProfile(patch: Partial<Profile>) {
     setState((s) => ({ ...s, profile: { ...s.profile, ...patch } }));
   },
