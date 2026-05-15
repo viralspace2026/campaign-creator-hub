@@ -37,11 +37,15 @@ function Detail() {
   const { id } = useParams({ from: "/affiliate/campaigns/$id" });
   const c = useStore((s) => s.campaigns.find((x) => x.id === id));
   const joined = useStore((s) => s.joined[id] ?? []);
+  const code = useStore((s) => s.affiliateLinks[id]);
   const [active, setActive] = useState<ActionType | null>(null);
   const [copied, setCopied] = useState(false);
 
   const current: ActionType | null = active ?? c?.actions[0] ?? null;
-  const refLink = useMemo(() => `https://viral.space/r/${id}/alex`, [id]);
+  const refLink = useMemo(
+    () => (code ? `${typeof window !== "undefined" ? window.location.origin : "https://viral.space"}/affiliate/campaigns/${id}?ref=${code}` : ""),
+    [id, code],
+  );
 
   if (!c) {
     return (
