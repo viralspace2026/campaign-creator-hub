@@ -418,11 +418,29 @@ function formFieldsFor(type: ActionType, state: Record<string, string> = {}): Fo
     case "task":
       return [
         { key: "kind", label: "Task type", type: "select", options: ["Referral", "Signup", "Download", "Social post"] },
-        { key: "reward", label: "Reward (USD)", type: "text", placeholder: "5" },
-        { key: "proof", label: "Proof required", type: "text", placeholder: "Screenshot of post" },
+        { key: "pricing", label: "Pricing tier", type: "select", options: TASK_PRICING.map((t) => t.id) },
+        { key: "proof", label: "Proof required", type: "select", options: TASK_PROOF_OPTIONS },
       ];
   }
 }
+
+const TASK_PROOF_OPTIONS = [
+  "Screenshot of post",
+  "Link to published content",
+  "Order confirmation",
+  "Email confirmation",
+  "Video recording",
+  "Tracking pixel (auto)",
+  "No proof required",
+];
+
+interface TaskPricing { id: string; label: string; price: number; description: string; }
+const TASK_PRICING: TaskPricing[] = [
+  { id: "Micro", label: "Micro $1", price: 1, description: "Quick taps — follow, like, install" },
+  { id: "Standard", label: "Standard $5", price: 5, description: "Signups, downloads, simple posts" },
+  { id: "Premium", label: "Premium $15", price: 15, description: "Full referrals, content creation" },
+  { id: "Pro", label: "Pro $50", price: 50, description: "High-effort campaigns, video reviews" },
+];
 
 function Input({ label, value, onChange, placeholder }: { label: string; value: string; onChange: (v: string) => void; placeholder?: string }) {
   return (
