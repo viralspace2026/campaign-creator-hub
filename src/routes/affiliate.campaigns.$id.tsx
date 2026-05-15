@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useParams } from "@tanstack/react-router";
-import { ArrowLeft, Copy, Check, CheckCircle2 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { ArrowLeft, Copy, Check, CheckCircle2, Share2 } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import { actionMeta, type ActionType } from "@/lib/mock-data";
 import { ActionTile } from "@/components/ActionTile";
 import { store, useStore } from "@/lib/store";
