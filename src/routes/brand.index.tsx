@@ -53,6 +53,17 @@ function BrandHome() {
   const campaigns = useStore((s) => s.campaigns);
   const [range, setRange] = useState<Range>("30d");
   const [metric, setMetric] = useState<Metric>("visitors");
+  const [actionView, setActionView] = useState<{ campaign: StoredCampaign; action: ActionType } | null>(null);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  const previewLinkFor = (id: string) =>
+    `${typeof window !== "undefined" ? window.location.origin : "https://viral.space"}/affiliate/campaigns/${id}`;
+
+  const copyPreview = (id: string) => {
+    navigator.clipboard?.writeText(previewLinkFor(id));
+    setCopiedId(id);
+    setTimeout(() => setCopiedId(null), 1500);
+  };
 
   const totals = campaigns.reduce(
     (acc, c) => ({
