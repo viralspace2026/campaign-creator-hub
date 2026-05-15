@@ -276,8 +276,10 @@ function ActionForm({
         const quals = parseList(state.qualifications).length;
         return `${state.responses || "100"} responses · $${state.reward || "0"}/participant${quals ? ` · ${quals} criteria` : ""}`;
       }
-      case "task":
-        return `${state.kind || "Referral"} · $${state.reward || "0"} per completion`;
+      case "task": {
+        const tier = TASK_PRICING.find((t) => t.id === state.pricing) || TASK_PRICING[0];
+        return `${state.kind || "Referral"} · ${tier.label} ($${tier.price}/completion)`;
+      }
     }
   })();
 
