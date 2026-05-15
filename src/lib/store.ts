@@ -34,6 +34,7 @@ interface State {
   campaigns: StoredCampaign[];
   draft: CampaignDraft;
   joined: Record<string, ActionType[]>; // campaignId -> joined action types
+  affiliateLinks: Record<string, string>; // campaignId -> unique referral code
   profile: Profile;
 }
 
