@@ -129,35 +129,95 @@ function Detail() {
 
             <div className="space-y-3">
               <h4 className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Your referral link</h4>
-              <div className="flex items-center gap-2 rounded-xl bg-muted/60 p-3">
-                <code className="flex-1 truncate text-sm">{refLink}</code>
-                <button
-                  onClick={() => {
-                    navigator.clipboard?.writeText(refLink);
-                    setCopied(true);
-                    setTimeout(() => setCopied(false), 1500);
-                  }}
-                  className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground hover:opacity-90"
-                >
-                  {copied ? <Check className="size-3.5" /> : <Copy className="size-3.5" />}
-                  {copied ? "Copied" : "Copy"}
-                </button>
-              </div>
-              {current === "sales" && c.commission && (
-                <p className="text-xs text-muted-foreground">You earn <strong>{c.commission}</strong> on every verified sale.</p>
+              {refLink ? (
+                <>
+                  <div className="flex items-center gap-2 rounded-xl bg-muted/60 p-3">
+                    <code className="flex-1 truncate text-sm">{refLink}</code>
+                    <button
+                      onClick={() => {
+                        navigator.clipboard?.writeText(refLink);
+                        setCopied(true);
+                        setTimeout(() => setCopied(false), 1500);
+                      }}
+                      className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground hover:opacity-90"
+                    >
+                      {copied ? <Check className="size-3.5" /> : <Copy className="size-3.5" />}
+                      {copied ? "Copied" : "Copy"}
+                    </button>
+                  </div>
+                  <ShareRow url={refLink} title={`Check out ${c.title}`} />
+                  {current === "sales" && c.commission && (
+                    <p className="text-xs text-muted-foreground">You earn <strong>{c.commission}</strong> on every verified sale.</p>
+                  )}
+                </>
+              ) : (
+                <p className="rounded-xl bg-muted/60 p-3 text-sm text-muted-foreground">
+                  Click <strong>Participate</strong> to generate your unique affiliate link.
+                </p>
               )}
             </div>
           </div>
 
           <button
-            onClick={() => store.joinAction(id, current)}
+            onClick={() => {
+              store.joinAction(id, current);
+              const newCode = store.getOrCreateAffiliateLink(id);
+              const link = `${window.location.origin}/affiliate/campaigns/${id}?ref=${newCode}`;
+              navigator.clipboard?.writeText(link).then(() => {
+                setCopied(true);
+                setTimeout(() => setCopied(false), 1800);
+              });
+            }}
             disabled={isJoined}
             className="mt-6 inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-60"
           >
-            {isJoined ? (<><CheckCircle2 className="size-4" /> Joined</>) : "Participate in this action"}
+            {isJoined ? (<><CheckCircle2 className="size-4" /> Joined — link copied</>) : "Participate & copy my link"}
           </button>
         </div>
       )}
+    </div>
+  );
+}
+
+function ShareRow({ url, title }: { url: string; title: string }) {
+  const enc = encodeURIComponent;
+  const text = `${title} — ${url}`;
+  const targets = [
+    { label: "WhatsApp", href: `https://wa.me/?text=${enc(text)}`, color: "bg-[#25D366] text-white" },
+    { label: "X / Twitter", href: `https://twitter.com/intent/tweet?text=${enc(title)}&url=${enc(url)}`, color: "bg-foreground text-background" },
+    { label: "Facebook", href: `https://www.facebook.com/sharer/sharer.php?u=${enc(url)}`, color: "bg-[#1877F2] text-white" },
+    { label: "Telegram", href: `https://t.me/share/url?url=${enc(url)}&text=${enc(title)}`, color: "bg-[#0088cc] text-white" },
+    { label: "Email", href: `mailto:?subject=${enc(title)}&body=${enc(text)}`, color: "bg-secondary text-secondary-foreground" },
+  ];
+  const nativeShare = async () => {
+    if (navigator.share) {
+      try { await navigator.share({ title, text: title, url }); } catch {}
+    }
+  };
+  return (
+    <div>
+      <h4 className="mb-2 text-xs font-bold uppercase tracking-wide text-muted-foreground">Share</h4>
+      <div className="flex flex-wrap gap-2">
+        {targets.map((t) => (
+          <a
+            key={t.label}
+            href={t.href}
+            target="_blank"
+            rel="noreferrer"
+            className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold hover:opacity-90 ${t.color}`}
+          >
+            {t.label}
+          </a>
+        ))}
+        {typeof navigator !== "undefined" && "share" in navigator && (
+          <button
+            onClick={nativeShare}
+            className="inline-flex items-center gap-1.5 rounded-lg bg-card px-3 py-1.5 text-xs font-semibold ring-1 ring-border hover:bg-muted"
+          >
+            <Share2 className="size-3.5" /> More
+          </button>
+        )}
+      </div>
     </div>
   );
 }
