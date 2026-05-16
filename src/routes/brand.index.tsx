@@ -11,7 +11,7 @@ import {
   YAxis,
 } from "recharts";
 import { ActionTile } from "@/components/ActionTile";
-import { useStore } from "@/lib/store";
+import { useStore, store } from "@/lib/store";
 import { actionMeta, type ActionType } from "@/lib/mock-data";
 import type { StoredCampaign } from "@/lib/store";
 
