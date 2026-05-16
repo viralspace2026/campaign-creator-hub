@@ -66,7 +66,7 @@ const defaultProfile: Profile = {
 };
 
 function load(): State {
-  const base: State = { campaigns: mockCampaigns as StoredCampaign[], draft: emptyDraft, joined: {}, affiliateLinks: {}, profile: defaultProfile };
+  const base: State = { campaigns: mockCampaigns as StoredCampaign[], draft: emptyDraft, joined: {}, affiliateLinks: {}, visits: {}, profile: defaultProfile };
   if (typeof window === "undefined") return base;
   try {
     const raw = localStorage.getItem(KEY);
