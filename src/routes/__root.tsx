@@ -82,8 +82,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "twitter:site", content: "@Lovable" },
       { name: "twitter:title", content: "viralspace" },
       { name: "twitter:description", content: "Campaign Creator Hub allows brands to build and launch marketing campaigns with customizable actions." },
-      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/1714f12e-eb83-406b-8e63-2d1e0fb8366a/id-preview-becb1df1--e4352770-deea-43de-92f2-3ffd5a129dfa.lovable.app-1778670011564.png" },
-      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/1714f12e-eb83-406b-8e63-2d1e0fb8366a/id-preview-becb1df1--e4352770-deea-43de-92f2-3ffd5a129dfa.lovable.app-1778670011564.png" },
+      { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/zcuSGgzlhsRPDkwlzdVJBscEcCs2/social-images/social-1778938482321-WhatsApp_Image_2026-05-12_at_1.22.42_PM.webp" },
+      { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/zcuSGgzlhsRPDkwlzdVJBscEcCs2/social-images/social-1778938482321-WhatsApp_Image_2026-05-12_at_1.22.42_PM.webp" },
     ],
     links: [
       {
