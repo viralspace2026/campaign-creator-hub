@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useParams } from "@tanstack/react-router";
-import { ArrowLeft, Copy, Check, CheckCircle2, Share2, Activity } from "lucide-react";
+import { ArrowLeft, Copy, Check, CheckCircle2, Share2, Activity, Lock, ClipboardList, Upload, Hourglass, XCircle } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { actionMeta, type ActionType } from "@/lib/mock-data";
 import { ActionTile } from "@/components/ActionTile";
@@ -176,52 +176,59 @@ function Detail() {
               </ol>
             </div>
 
-            <div className="space-y-3">
-              <h4 className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Your referral link</h4>
-              {refLink ? (
-                <>
-                  <div className="flex items-center gap-2 rounded-xl bg-muted/60 p-3">
-                    <code className="flex-1 truncate text-sm">{refLink}</code>
-                    <button
-                      onClick={() => {
-                        navigator.clipboard?.writeText(refLink);
-                        setCopied(true);
-                        setTimeout(() => setCopied(false), 1500);
-                      }}
-                      className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground hover:opacity-90"
-                    >
-                      {copied ? <Check className="size-3.5" /> : <Copy className="size-3.5" />}
-                      {copied ? "Copied" : "Copy"}
-                    </button>
-                  </div>
-                  <ShareRow url={refLink} title={`Check out ${c.title}`} />
-                  {current === "sales" && c.commission && (
-                    <p className="text-xs text-muted-foreground">You earn <strong>{c.commission}</strong> on every verified sale.</p>
-                  )}
-                </>
-              ) : (
-                <p className="rounded-xl bg-muted/60 p-3 text-sm text-muted-foreground">
-                  Click <strong>Participate</strong> to generate your unique affiliate link.
-                </p>
-              )}
-            </div>
+            {(current === "sales" || current === "promote") && (
+              <div className="space-y-3">
+                <h4 className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Your referral link</h4>
+                {refLink ? (
+                  <>
+                    <div className="flex items-center gap-2 rounded-xl bg-muted/60 p-3">
+                      <code className="flex-1 truncate text-sm">{refLink}</code>
+                      <button
+                        onClick={() => {
+                          navigator.clipboard?.writeText(refLink);
+                          setCopied(true);
+                          setTimeout(() => setCopied(false), 1500);
+                        }}
+                        className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground hover:opacity-90"
+                      >
+                        {copied ? <Check className="size-3.5" /> : <Copy className="size-3.5" />}
+                        {copied ? "Copied" : "Copy"}
+                      </button>
+                    </div>
+                    <ShareRow url={refLink} title={`Check out ${c.title}`} />
+                    {current === "sales" && c.commission && (
+                      <p className="text-xs text-muted-foreground">You earn <strong>{c.commission}</strong> on every verified sale.</p>
+                    )}
+                  </>
+                ) : (
+                  <p className="rounded-xl bg-muted/60 p-3 text-sm text-muted-foreground">
+                    Click <strong>Participate</strong> to generate your unique affiliate link.
+                  </p>
+                )}
+              </div>
+            )}
+
+            {current === "survey" && <SurveyPanel campaignId={id} />}
+            {current === "task" && <TaskPanel campaignId={id} />}
           </div>
 
-          <button
-            onClick={() => {
-              store.joinAction(id, current);
-              const newCode = store.getOrCreateAffiliateLink(id);
-              const link = `${window.location.origin}/affiliate/campaigns/${id}?ref=${newCode}`;
-              navigator.clipboard?.writeText(link).then(() => {
-                setCopied(true);
-                setTimeout(() => setCopied(false), 1800);
-              });
-            }}
-            disabled={isJoined}
-            className="mt-6 inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-60"
-          >
-            {isJoined ? (<><CheckCircle2 className="size-4" /> Joined — link copied</>) : "Participate & copy my link"}
-          </button>
+          {(current === "sales" || current === "promote") && (
+            <button
+              onClick={() => {
+                store.joinAction(id, current);
+                const newCode = store.getOrCreateAffiliateLink(id);
+                const link = `${window.location.origin}/affiliate/campaigns/${id}?ref=${newCode}`;
+                navigator.clipboard?.writeText(link).then(() => {
+                  setCopied(true);
+                  setTimeout(() => setCopied(false), 1800);
+                });
+              }}
+              disabled={isJoined}
+              className="mt-6 inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-60"
+            >
+              {isJoined ? (<><CheckCircle2 className="size-4" /> Joined — link copied</>) : "Participate & copy my link"}
+            </button>
+          )}
         </div>
       )}
 
@@ -313,6 +320,189 @@ function ShareRow({ url, title }: { url: string; title: string }) {
           </button>
         )}
       </div>
+    </div>
+  );
+}
+
+function SurveyPanel({ campaignId }: { campaignId: string }) {
+  const submission = useStore((s) => s.surveys[campaignId]);
+  const eligibility = useStore((s) => store.qualifiesForSurvey(campaignId));
+  const profile = useStore((s) => s.affiliateProfile);
+  const [taking, setTaking] = useState(false);
+
+  if (submission?.credited) {
+    return (
+      <div className="space-y-2 rounded-xl bg-success-bg p-4 text-sm text-promote-foreground ring-1 ring-success/30">
+        <div className="flex items-center gap-2 font-semibold">
+          <CheckCircle2 className="size-4" /> Survey completed
+        </div>
+        <p className="text-xs">
+          Auto-credited <strong>${submission.reward.toFixed(2)}</strong> on{" "}
+          {new Date(submission.completedAt).toLocaleDateString()}.
+        </p>
+      </div>
+    );
+  }
+
+  if (!eligibility.ok) {
+    return (
+      <div className="space-y-3 rounded-xl bg-muted/60 p-4 text-sm">
+        <div className="flex items-center gap-2 font-semibold text-foreground">
+          <Lock className="size-4" /> Not yet qualified
+        </div>
+        <p className="text-xs text-muted-foreground">
+          This survey screens affiliates before participation. You don&rsquo;t meet:
+        </p>
+        <ul className="space-y-1 text-xs">
+          {eligibility.reasons.map((r) => (
+            <li key={r} className="flex items-start gap-1.5 text-muted-foreground">
+              <XCircle className="mt-0.5 size-3 shrink-0 text-destructive" /> <span>{r}</span>
+            </li>
+          ))}
+        </ul>
+        <p className="text-xs text-muted-foreground">
+          Your profile: {profile.age} yrs · {profile.gender} · {profile.location} ·{" "}
+          {profile.followers.toLocaleString()} followers · {profile.platforms.join(", ")}
+        </p>
+        <Link to="/profile" className="inline-flex items-center text-xs font-semibold text-primary hover:underline">
+          Update profile →
+        </Link>
+      </div>
+    );
+  }
+
+  if (taking) {
+    return (
+      <MockSurvey
+        onCancel={() => setTaking(false)}
+        onComplete={() => {
+          store.joinAction(campaignId, "survey");
+          store.completeSurvey(campaignId);
+          setTaking(false);
+        }}
+      />
+    );
+  }
+
+  return (
+    <div className="space-y-3 rounded-xl bg-survey-bg/40 p-4 text-sm ring-1 ring-survey-bg">
+      <div className="flex items-center gap-2 font-semibold">
+        <ClipboardList className="size-4 text-survey-foreground" /> You qualify
+      </div>
+      <p className="text-xs text-muted-foreground">
+        Take the screened survey. Reward is auto-credited the moment you finish.
+      </p>
+      <button
+        onClick={() => setTaking(true)}
+        className="inline-flex items-center gap-2 rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground hover:opacity-90"
+      >
+        Start survey
+      </button>
+    </div>
+  );
+}
+
+function MockSurvey({ onComplete, onCancel }: { onComplete: () => void; onCancel: () => void }) {
+  const questions = [
+    "How often do you discover new products via creators?",
+    "Which platform do you use most for shopping inspiration?",
+    "How likely are you to recommend a product after trying it?",
+  ];
+  const [step, setStep] = useState(0);
+  const [answers, setAnswers] = useState<string[]>([]);
+  const choices = ["Never", "Sometimes", "Often", "Always"];
+
+  const next = (a: string) => {
+    const updated = [...answers, a];
+    setAnswers(updated);
+    if (step + 1 >= questions.length) onComplete();
+    else setStep(step + 1);
+  };
+
+  return (
+    <div className="space-y-3 rounded-xl bg-card p-4 ring-1 ring-border">
+      <div className="flex items-center justify-between text-xs text-muted-foreground">
+        <span>Question {step + 1} of {questions.length}</span>
+        <button onClick={onCancel} className="hover:text-foreground">Cancel</button>
+      </div>
+      <p className="text-sm font-medium">{questions[step]}</p>
+      <div className="grid grid-cols-2 gap-2">
+        {choices.map((c) => (
+          <button
+            key={c}
+            onClick={() => next(c)}
+            className="rounded-lg bg-muted px-3 py-2 text-xs font-semibold hover:bg-accent"
+          >
+            {c}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function TaskPanel({ campaignId }: { campaignId: string }) {
+  const submission = useStore((s) => s.tasks[campaignId]);
+  const [proof, setProof] = useState("");
+
+  if (submission) {
+    const statusMap = {
+      pending: { icon: Hourglass, tint: "bg-task-bg text-task-foreground", label: "Under review" },
+      approved: { icon: CheckCircle2, tint: "bg-success-bg text-promote-foreground", label: "Approved & credited" },
+      rejected: { icon: XCircle, tint: "bg-destructive/10 text-destructive", label: "Rejected" },
+    } as const;
+    const m = statusMap[submission.status];
+    const Icon = m.icon;
+    return (
+      <div className={`space-y-2 rounded-xl p-4 text-sm ${m.tint}`}>
+        <div className="flex items-center gap-2 font-semibold">
+          <Icon className="size-4" /> {m.label}
+        </div>
+        <p className="text-xs opacity-90">
+          Submitted {new Date(submission.submittedAt).toLocaleString()}
+        </p>
+        <p className="break-all rounded-lg bg-background/60 p-2 text-xs">
+          Proof: {submission.proof}
+        </p>
+        {submission.status === "approved" && (
+          <p className="text-xs">Credited <strong>${submission.reward.toFixed(2)}</strong> after brand review.</p>
+        )}
+        {submission.status === "pending" && (
+          <p className="text-xs">Credit will be released once the brand approves your proof.</p>
+        )}
+        {submission.status === "rejected" && submission.reviewNote && (
+          <p className="text-xs">Reason: {submission.reviewNote}</p>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-3 rounded-xl bg-task-bg/40 p-4 text-sm ring-1 ring-task-bg">
+      <div className="flex items-center gap-2 font-semibold">
+        <Upload className="size-4 text-task-foreground" /> Submit proof
+      </div>
+      <p className="text-xs text-muted-foreground">
+        Drop a link to your post, screenshot URL, or confirmation. Credit is released only after the brand reviews and approves.
+      </p>
+      <textarea
+        value={proof}
+        onChange={(e) => setProof(e.target.value)}
+        rows={3}
+        placeholder="https://tiktok.com/@you/video/123 — or paste screenshot URL"
+        className="w-full rounded-lg border border-input bg-background px-3 py-2 text-xs outline-none focus:border-primary focus:ring-2 focus:ring-ring/30"
+      />
+      <button
+        disabled={!proof.trim()}
+        onClick={() => {
+          store.joinAction(campaignId, "task");
+          store.submitTaskProof(campaignId, proof.trim());
+          setProof("");
+        }}
+        className="inline-flex items-center gap-2 rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-50"
+      >
+        Submit for review
+      </button>
     </div>
   );
 }
