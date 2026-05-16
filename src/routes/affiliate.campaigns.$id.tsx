@@ -1,9 +1,18 @@
 import { createFileRoute, Link, useParams } from "@tanstack/react-router";
-import { ArrowLeft, Copy, Check, CheckCircle2, Share2 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { ArrowLeft, Copy, Check, CheckCircle2, Share2, Activity } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { actionMeta, type ActionType } from "@/lib/mock-data";
 import { ActionTile } from "@/components/ActionTile";
 import { store, useStore } from "@/lib/store";
+
+function parseUA(ua: string) {
+  const isTablet = /iPad|Tablet/i.test(ua);
+  const isMobile = !isTablet && /Mobi|Android|iPhone/i.test(ua);
+  const device = isTablet ? "Tablet" : isMobile ? "Mobile" : "Desktop";
+  const os = /Windows/i.test(ua) ? "Windows" : /Mac OS X/i.test(ua) ? "macOS" : /Android/i.test(ua) ? "Android" : /iPhone|iPad|iOS/i.test(ua) ? "iOS" : /Linux/i.test(ua) ? "Linux" : "Unknown";
+  const browser = /Edg\//i.test(ua) ? "Edge" : /Chrome\//i.test(ua) ? "Chrome" : /Firefox\//i.test(ua) ? "Firefox" : /Safari\//i.test(ua) ? "Safari" : "Other";
+  return { device, os, browser };
+}
 
 export const Route = createFileRoute("/affiliate/campaigns/$id")({
   head: () => ({ meta: [{ title: "Campaign — ViralSpace" }] }),
@@ -17,9 +26,9 @@ const NEXT_STEPS: Record<ActionType, string[]> = {
     "Earn the listed commission on every verified sale",
   ],
   promote: [
-    "Download brand banners from the campaign kit",
-    "Post them with your tagged referral link",
-    "Get paid based on impressions and click-through performance",
+    "Copy your unique tracking link below",
+    "Share it on social, ads, newsletters, or banners",
+    "We track every click — IP, device, referrer, and engagement time",
   ],
   survey: [
     "Open the curated survey from your dashboard",
@@ -40,12 +49,52 @@ function Detail() {
   const code = useStore((s) => s.affiliateLinks[id]);
   const [active, setActive] = useState<ActionType | null>(null);
   const [copied, setCopied] = useState(false);
+  const visits = useStore((s) => s.visits[id] ?? []);
+  const recordedRef = useRef(false);
 
   const current: ActionType | null = active ?? c?.actions[0] ?? null;
   const refLink = useMemo(
     () => (code ? `${typeof window !== "undefined" ? window.location.origin : "https://viral.space"}/affiliate/campaigns/${id}?ref=${code}` : ""),
     [id, code],
   );
+
+  // Record visitor footprint when arriving via ?ref=<code>
+  useEffect(() => {
+    if (typeof window === "undefined" || recordedRef.current) return;
+    const params = new URLSearchParams(window.location.search);
+    const refCode = params.get("ref");
+    if (!refCode) return;
+    recordedRef.current = true;
+    const ua = navigator.userAgent;
+    const { device, os, browser } = parseUA(ua);
+    const baseVisit = {
+      campaignId: id,
+      code: refCode,
+      ip: "0.0.0.0",
+      device,
+      os,
+      browser,
+      userAgent: ua,
+      referrer: document.referrer || "direct",
+      language: navigator.language,
+      screen: `${window.screen.width}x${window.screen.height}`,
+    };
+    const startedAt = Date.now();
+    // Try resolving real IP (mock-friendly external lookup)
+    fetch("https://api.ipify.org?format=json")
+      .then((r) => r.json())
+      .then((j) => store.recordVisit({ ...baseVisit, ip: j.ip ?? "0.0.0.0" }))
+      .catch(() => store.recordVisit(baseVisit));
+    // Track engagement on unload
+    const onLeave = () => {
+      const secs = Math.round((Date.now() - startedAt) / 1000);
+      const list = store.getVisits(id);
+      const mine = list.find((v) => v.code === refCode && v.userAgent === ua);
+      if (mine) mine.engagedSeconds = secs;
+    };
+    window.addEventListener("beforeunload", onLeave);
+    return () => window.removeEventListener("beforeunload", onLeave);
+  }, [id]);
 
   if (!c) {
     return (
@@ -173,6 +222,52 @@ function Detail() {
           >
             {isJoined ? (<><CheckCircle2 className="size-4" /> Joined — link copied</>) : "Participate & copy my link"}
           </button>
+        </div>
+      )}
+
+      {refLink && (
+        <div className="rounded-3xl bg-card p-6 ring-1 ring-border/60">
+          <div className="mb-4 flex items-center gap-2">
+            <Activity className="size-4 text-primary" />
+            <h3 className="text-lg font-semibold">Visitor tracking</h3>
+            <span className="ml-auto rounded-md bg-secondary px-2 py-0.5 text-xs font-semibold text-secondary-foreground">
+              {visits.length} {visits.length === 1 ? "visit" : "visits"}
+            </span>
+          </div>
+          {visits.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              No visits yet. Share your link — every click is logged with IP, device, browser, referrer, language, and engagement time.
+            </p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="text-left text-xs uppercase tracking-wide text-muted-foreground">
+                  <tr>
+                    <th className="px-2 py-2">Time</th>
+                    <th className="px-2 py-2">IP</th>
+                    <th className="px-2 py-2">Device</th>
+                    <th className="px-2 py-2">OS / Browser</th>
+                    <th className="px-2 py-2">Referrer</th>
+                    <th className="px-2 py-2">Lang</th>
+                    <th className="px-2 py-2 text-right">Engaged</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {visits.map((v) => (
+                    <tr key={v.id} className="border-t border-border/60">
+                      <td className="px-2 py-2 text-muted-foreground">{new Date(v.timestamp).toLocaleString()}</td>
+                      <td className="px-2 py-2 font-mono text-xs">{v.ip}</td>
+                      <td className="px-2 py-2">{v.device}</td>
+                      <td className="px-2 py-2">{v.os} · {v.browser}</td>
+                      <td className="px-2 py-2 max-w-[180px] truncate text-muted-foreground">{v.referrer}</td>
+                      <td className="px-2 py-2 text-muted-foreground">{v.language}</td>
+                      <td className="px-2 py-2 text-right">{v.engagedSeconds ? `${v.engagedSeconds}s` : "—"}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       )}
     </div>

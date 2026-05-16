@@ -35,7 +35,24 @@ interface State {
   draft: CampaignDraft;
   joined: Record<string, ActionType[]>; // campaignId -> joined action types
   affiliateLinks: Record<string, string>; // campaignId -> unique referral code
+  visits: Record<string, Visit[]>; // campaignId -> recorded visitor entries
   profile: Profile;
+}
+
+export interface Visit {
+  id: string;
+  campaignId: string;
+  code: string; // affiliate referral code
+  timestamp: number;
+  ip: string;
+  device: string; // "Mobile" | "Tablet" | "Desktop"
+  os: string;
+  browser: string;
+  userAgent: string;
+  referrer: string;
+  language: string;
+  screen: string;
+  engagedSeconds?: number;
 }
 
 const KEY = "viralspace-state-v2";
@@ -49,7 +66,7 @@ const defaultProfile: Profile = {
 };
 
 function load(): State {
-  const base: State = { campaigns: mockCampaigns as StoredCampaign[], draft: emptyDraft, joined: {}, affiliateLinks: {}, profile: defaultProfile };
+  const base: State = { campaigns: mockCampaigns as StoredCampaign[], draft: emptyDraft, joined: {}, affiliateLinks: {}, visits: {}, profile: defaultProfile };
   if (typeof window === "undefined") return base;
   try {
     const raw = localStorage.getItem(KEY);
@@ -136,6 +153,25 @@ export const store = {
     const code = Math.random().toString(36).slice(2, 8) + Math.random().toString(36).slice(2, 6);
     setState((s) => ({ ...s, affiliateLinks: { ...s.affiliateLinks, [campaignId]: code } }));
     return code;
+  },
+  recordVisit(v: Omit<Visit, "id" | "timestamp"> & { timestamp?: number }): Visit {
+    const entry: Visit = {
+      id: `v-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+      timestamp: v.timestamp ?? Date.now(),
+      ...v,
+    } as Visit;
+    setState((s) => {
+      const list = s.visits[entry.campaignId] ?? [];
+      // Dedupe rapid duplicate hits within 2s for same code+ua
+      if (list.some((x) => x.code === entry.code && x.userAgent === entry.userAgent && entry.timestamp - x.timestamp < 2000)) {
+        return s;
+      }
+      return { ...s, visits: { ...s.visits, [entry.campaignId]: [entry, ...list].slice(0, 200) } };
+    });
+    return entry;
+  },
+  getVisits(campaignId: string): Visit[] {
+    return state.visits[campaignId] ?? [];
   },
   updateProfile(patch: Partial<Profile>) {
     setState((s) => ({ ...s, profile: { ...s.profile, ...patch } }));
