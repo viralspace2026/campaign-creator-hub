@@ -35,7 +35,24 @@ interface State {
   draft: CampaignDraft;
   joined: Record<string, ActionType[]>; // campaignId -> joined action types
   affiliateLinks: Record<string, string>; // campaignId -> unique referral code
+  visits: Record<string, Visit[]>; // campaignId -> recorded visitor entries
   profile: Profile;
+}
+
+export interface Visit {
+  id: string;
+  campaignId: string;
+  code: string; // affiliate referral code
+  timestamp: number;
+  ip: string;
+  device: string; // "Mobile" | "Tablet" | "Desktop"
+  os: string;
+  browser: string;
+  userAgent: string;
+  referrer: string;
+  language: string;
+  screen: string;
+  engagedSeconds?: number;
 }
 
 const KEY = "viralspace-state-v2";
