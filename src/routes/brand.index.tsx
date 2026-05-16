@@ -51,10 +51,14 @@ function generateSeries(range: Range, metric: Metric) {
 
 function BrandHome() {
   const campaigns = useStore((s) => s.campaigns);
+  const taskSubmissions = useStore((s) => s.tasks);
   const [range, setRange] = useState<Range>("30d");
   const [metric, setMetric] = useState<Metric>("visitors");
   const [actionView, setActionView] = useState<{ campaign: StoredCampaign; action: ActionType } | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  const pendingTasks = Object.values(taskSubmissions).filter((t) => t.status === "pending");
+  const reviewedTasks = Object.values(taskSubmissions).filter((t) => t.status !== "pending");
 
   const previewLinkFor = (id: string) =>
     `${typeof window !== "undefined" ? window.location.origin : "https://viral.space"}/affiliate/campaigns/${id}`;
