@@ -49,12 +49,52 @@ function Detail() {
   const code = useStore((s) => s.affiliateLinks[id]);
   const [active, setActive] = useState<ActionType | null>(null);
   const [copied, setCopied] = useState(false);
+  const visits = useStore((s) => s.visits[id] ?? []);
+  const recordedRef = useRef(false);
 
   const current: ActionType | null = active ?? c?.actions[0] ?? null;
   const refLink = useMemo(
     () => (code ? `${typeof window !== "undefined" ? window.location.origin : "https://viral.space"}/affiliate/campaigns/${id}?ref=${code}` : ""),
     [id, code],
   );
+
+  // Record visitor footprint when arriving via ?ref=<code>
+  useEffect(() => {
+    if (typeof window === "undefined" || recordedRef.current) return;
+    const params = new URLSearchParams(window.location.search);
+    const refCode = params.get("ref");
+    if (!refCode) return;
+    recordedRef.current = true;
+    const ua = navigator.userAgent;
+    const { device, os, browser } = parseUA(ua);
+    const baseVisit = {
+      campaignId: id,
+      code: refCode,
+      ip: "0.0.0.0",
+      device,
+      os,
+      browser,
+      userAgent: ua,
+      referrer: document.referrer || "direct",
+      language: navigator.language,
+      screen: `${window.screen.width}x${window.screen.height}`,
+    };
+    const startedAt = Date.now();
+    // Try resolving real IP (mock-friendly external lookup)
+    fetch("https://api.ipify.org?format=json")
+      .then((r) => r.json())
+      .then((j) => store.recordVisit({ ...baseVisit, ip: j.ip ?? "0.0.0.0" }))
+      .catch(() => store.recordVisit(baseVisit));
+    // Track engagement on unload
+    const onLeave = () => {
+      const secs = Math.round((Date.now() - startedAt) / 1000);
+      const list = store.getVisits(id);
+      const mine = list.find((v) => v.code === refCode && v.userAgent === ua);
+      if (mine) mine.engagedSeconds = secs;
+    };
+    window.addEventListener("beforeunload", onLeave);
+    return () => window.removeEventListener("beforeunload", onLeave);
+  }, [id]);
 
   if (!c) {
     return (
