@@ -229,6 +229,94 @@ export const store = {
   updateProfile(patch: Partial<Profile>) {
     setState((s) => ({ ...s, profile: { ...s.profile, ...patch } }));
   },
+  updateAffiliateProfile(patch: Partial<AffiliateProfile>) {
+    setState((s) => ({ ...s, affiliateProfile: { ...s.affiliateProfile, ...patch } }));
+  },
+  qualifiesForSurvey(campaignId: string): { ok: boolean; reasons: string[] } {
+    const c = state.campaigns.find((x) => x.id === campaignId);
+    const cfg = c?.actionConfigs?.find((a) => a.type === "survey")?.data ?? {};
+    const p = state.affiliateProfile;
+    const reasons: string[] = [];
+    const minAge = Number(cfg.qualAgeMin);
+    const maxAge = Number(cfg.qualAgeMax);
+    if (minAge && p.age < minAge) reasons.push(`Minimum age ${minAge}`);
+    if (maxAge && p.age > maxAge) reasons.push(`Maximum age ${maxAge}`);
+    if (cfg.qualGender && cfg.qualGender !== "Any" && cfg.qualGender !== p.gender) {
+      reasons.push(`Gender: ${cfg.qualGender}`);
+    }
+    if (cfg.qualLocation) {
+      const allowed = cfg.qualLocation.split(",").map((s: string) => s.trim().toLowerCase()).filter(Boolean);
+      if (allowed.length && !allowed.some((a: string) => p.location.toLowerCase().includes(a))) {
+        reasons.push(`Location: ${cfg.qualLocation}`);
+      }
+    }
+    const minF = Number(cfg.qualMinFollowers);
+    if (minF && p.followers < minF) reasons.push(`Min ${minF.toLocaleString()} followers`);
+    const needPlatforms = (cfg.qualPlatforms ?? "").split(",").map((s: string) => s.trim()).filter(Boolean);
+    if (needPlatforms.length && !needPlatforms.some((pl: string) => p.platforms.includes(pl))) {
+      reasons.push(`Platforms: ${needPlatforms.join("/")}`);
+    }
+    const needNiches = (cfg.qualNiches ?? "").split(",").map((s: string) => s.trim()).filter(Boolean);
+    if (needNiches.length && !needNiches.some((n: string) => p.niches.includes(n))) {
+      reasons.push(`Niches: ${needNiches.join("/")}`);
+    }
+    if (cfg.qualVerified === "yes" && !p.verified) reasons.push("Verified creators only");
+    return { ok: reasons.length === 0, reasons };
+  },
+  completeSurvey(campaignId: string) {
+    const c = state.campaigns.find((x) => x.id === campaignId);
+    const reward = Number(c?.actionConfigs?.find((a) => a.type === "survey")?.data.reward) || 1.5;
+    setState((s) => ({
+      ...s,
+      surveys: {
+        ...s.surveys,
+        [campaignId]: {
+          campaignId,
+          completedAt: Date.now(),
+          reward,
+          credited: true, // auto-credit
+        },
+      },
+    }));
+  },
+  submitTaskProof(campaignId: string, proof: string) {
+    const c = state.campaigns.find((x) => x.id === campaignId);
+    const cfg = c?.actionConfigs?.find((a) => a.type === "task")?.data;
+    const reward = Number(cfg?.price) || (cfg?.pricing === "Pro" ? 50 : cfg?.pricing === "Premium" ? 15 : cfg?.pricing === "Standard" ? 5 : 1);
+    setState((s) => ({
+      ...s,
+      tasks: {
+        ...s.tasks,
+        [campaignId]: {
+          campaignId,
+          proof,
+          submittedAt: Date.now(),
+          status: "pending",
+          reward,
+          credited: false,
+        },
+      },
+    }));
+  },
+  reviewTask(campaignId: string, decision: "approved" | "rejected", note?: string) {
+    setState((s) => {
+      const existing = s.tasks[campaignId];
+      if (!existing) return s;
+      return {
+        ...s,
+        tasks: {
+          ...s.tasks,
+          [campaignId]: {
+            ...existing,
+            status: decision,
+            reviewedAt: Date.now(),
+            reviewNote: note,
+            credited: decision === "approved",
+          },
+        },
+      };
+    });
+  },
 };
 
 export function useStore<T>(selector: (s: State) => T): T {
