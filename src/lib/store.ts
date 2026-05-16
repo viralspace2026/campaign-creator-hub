@@ -154,6 +154,25 @@ export const store = {
     setState((s) => ({ ...s, affiliateLinks: { ...s.affiliateLinks, [campaignId]: code } }));
     return code;
   },
+  recordVisit(v: Omit<Visit, "id" | "timestamp"> & { timestamp?: number }): Visit {
+    const entry: Visit = {
+      id: `v-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+      timestamp: v.timestamp ?? Date.now(),
+      ...v,
+    } as Visit;
+    setState((s) => {
+      const list = s.visits[entry.campaignId] ?? [];
+      // Dedupe rapid duplicate hits within 2s for same code+ua
+      if (list.some((x) => x.code === entry.code && x.userAgent === entry.userAgent && entry.timestamp - x.timestamp < 2000)) {
+        return s;
+      }
+      return { ...s, visits: { ...s.visits, [entry.campaignId]: [entry, ...list].slice(0, 200) } };
+    });
+    return entry;
+  },
+  getVisits(campaignId: string): Visit[] {
+    return state.visits[campaignId] ?? [];
+  },
   updateProfile(patch: Partial<Profile>) {
     setState((s) => ({ ...s, profile: { ...s.profile, ...patch } }));
   },
