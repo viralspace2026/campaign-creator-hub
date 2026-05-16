@@ -26,9 +26,9 @@ const NEXT_STEPS: Record<ActionType, string[]> = {
     "Earn the listed commission on every verified sale",
   ],
   promote: [
-    "Download brand banners from the campaign kit",
-    "Post them with your tagged referral link",
-    "Get paid based on impressions and click-through performance",
+    "Copy your unique tracking link below",
+    "Share it on social, ads, newsletters, or banners",
+    "We track every click — IP, device, referrer, and engagement time",
   ],
   survey: [
     "Open the curated survey from your dashboard",
