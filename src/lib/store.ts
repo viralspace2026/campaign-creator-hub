@@ -30,6 +30,36 @@ export interface Profile {
   role: "Brand" | "Affiliate" | "Admin";
 }
 
+export interface AffiliateProfile {
+  age: number;
+  gender: string; // "Female" | "Male" | "Non-binary"
+  location: string; // country code or name
+  followers: number;
+  platforms: string[];
+  niches: string[];
+  verified: boolean;
+}
+
+export interface SurveySubmission {
+  campaignId: string;
+  completedAt: number;
+  reward: number;
+  credited: boolean;
+}
+
+export type TaskReviewStatus = "pending" | "approved" | "rejected";
+
+export interface TaskSubmission {
+  campaignId: string;
+  proof: string;
+  submittedAt: number;
+  status: TaskReviewStatus;
+  reward: number;
+  reviewedAt?: number;
+  reviewNote?: string;
+  credited: boolean;
+}
+
 interface State {
   campaigns: StoredCampaign[];
   draft: CampaignDraft;
@@ -37,6 +67,9 @@ interface State {
   affiliateLinks: Record<string, string>; // campaignId -> unique referral code
   visits: Record<string, Visit[]>; // campaignId -> recorded visitor entries
   profile: Profile;
+  affiliateProfile: AffiliateProfile;
+  surveys: Record<string, SurveySubmission>;
+  tasks: Record<string, TaskSubmission>;
 }
 
 export interface Visit {
