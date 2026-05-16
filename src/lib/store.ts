@@ -98,8 +98,28 @@ const defaultProfile: Profile = {
   role: "Brand",
 };
 
+const defaultAffiliateProfile: AffiliateProfile = {
+  age: 26,
+  gender: "Female",
+  location: "US",
+  followers: 12500,
+  platforms: ["TikTok", "Instagram"],
+  niches: ["Music", "Lifestyle"],
+  verified: true,
+};
+
 function load(): State {
-  const base: State = { campaigns: mockCampaigns as StoredCampaign[], draft: emptyDraft, joined: {}, affiliateLinks: {}, visits: {}, profile: defaultProfile };
+  const base: State = {
+    campaigns: mockCampaigns as StoredCampaign[],
+    draft: emptyDraft,
+    joined: {},
+    affiliateLinks: {},
+    visits: {},
+    profile: defaultProfile,
+    affiliateProfile: defaultAffiliateProfile,
+    surveys: {},
+    tasks: {},
+  };
   if (typeof window === "undefined") return base;
   try {
     const raw = localStorage.getItem(KEY);
