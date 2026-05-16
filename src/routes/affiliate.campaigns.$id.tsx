@@ -224,6 +224,52 @@ function Detail() {
           </button>
         </div>
       )}
+
+      {refLink && (
+        <div className="rounded-3xl bg-card p-6 ring-1 ring-border/60">
+          <div className="mb-4 flex items-center gap-2">
+            <Activity className="size-4 text-primary" />
+            <h3 className="text-lg font-semibold">Visitor tracking</h3>
+            <span className="ml-auto rounded-md bg-secondary px-2 py-0.5 text-xs font-semibold text-secondary-foreground">
+              {visits.length} {visits.length === 1 ? "visit" : "visits"}
+            </span>
+          </div>
+          {visits.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              No visits yet. Share your link — every click is logged with IP, device, browser, referrer, language, and engagement time.
+            </p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="text-left text-xs uppercase tracking-wide text-muted-foreground">
+                  <tr>
+                    <th className="px-2 py-2">Time</th>
+                    <th className="px-2 py-2">IP</th>
+                    <th className="px-2 py-2">Device</th>
+                    <th className="px-2 py-2">OS / Browser</th>
+                    <th className="px-2 py-2">Referrer</th>
+                    <th className="px-2 py-2">Lang</th>
+                    <th className="px-2 py-2 text-right">Engaged</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {visits.map((v) => (
+                    <tr key={v.id} className="border-t border-border/60">
+                      <td className="px-2 py-2 text-muted-foreground">{new Date(v.timestamp).toLocaleString()}</td>
+                      <td className="px-2 py-2 font-mono text-xs">{v.ip}</td>
+                      <td className="px-2 py-2">{v.device}</td>
+                      <td className="px-2 py-2">{v.os} · {v.browser}</td>
+                      <td className="px-2 py-2 max-w-[180px] truncate text-muted-foreground">{v.referrer}</td>
+                      <td className="px-2 py-2 text-muted-foreground">{v.language}</td>
+                      <td className="px-2 py-2 text-right">{v.engagedSeconds ? `${v.engagedSeconds}s` : "—"}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
