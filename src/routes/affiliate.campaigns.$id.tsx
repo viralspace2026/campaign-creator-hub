@@ -1,9 +1,18 @@
 import { createFileRoute, Link, useParams } from "@tanstack/react-router";
-import { ArrowLeft, Copy, Check, CheckCircle2, Share2 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { ArrowLeft, Copy, Check, CheckCircle2, Share2, Activity } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { actionMeta, type ActionType } from "@/lib/mock-data";
 import { ActionTile } from "@/components/ActionTile";
 import { store, useStore } from "@/lib/store";
+
+function parseUA(ua: string) {
+  const isTablet = /iPad|Tablet/i.test(ua);
+  const isMobile = !isTablet && /Mobi|Android|iPhone/i.test(ua);
+  const device = isTablet ? "Tablet" : isMobile ? "Mobile" : "Desktop";
+  const os = /Windows/i.test(ua) ? "Windows" : /Mac OS X/i.test(ua) ? "macOS" : /Android/i.test(ua) ? "Android" : /iPhone|iPad|iOS/i.test(ua) ? "iOS" : /Linux/i.test(ua) ? "Linux" : "Unknown";
+  const browser = /Edg\//i.test(ua) ? "Edge" : /Chrome\//i.test(ua) ? "Chrome" : /Firefox\//i.test(ua) ? "Firefox" : /Safari\//i.test(ua) ? "Safari" : "Other";
+  return { device, os, browser };
+}
 
 export const Route = createFileRoute("/affiliate/campaigns/$id")({
   head: () => ({ meta: [{ title: "Campaign — ViralSpace" }] }),
