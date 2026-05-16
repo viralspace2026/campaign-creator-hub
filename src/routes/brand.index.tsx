@@ -157,6 +157,79 @@ function BrandHome() {
       </section>
 
       <section className="space-y-3">
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-semibold">Task proof reviews</h2>
+          <span className="text-xs text-muted-foreground">
+            {pendingTasks.length} pending · {reviewedTasks.length} reviewed
+          </span>
+        </div>
+        {pendingTasks.length === 0 && reviewedTasks.length === 0 ? (
+          <div className="rounded-2xl border-2 border-dashed border-border p-8 text-center text-sm text-muted-foreground">
+            No task submissions yet. Affiliates submit proof — you approve to release credit.
+          </div>
+        ) : (
+          <div className="overflow-hidden rounded-2xl bg-card ring-1 ring-border/60">
+            <table className="w-full text-sm">
+              <thead className="bg-muted/60 text-left text-xs uppercase tracking-wide text-muted-foreground">
+                <tr>
+                  <th className="px-5 py-3">Campaign</th>
+                  <th className="px-5 py-3">Proof</th>
+                  <th className="px-5 py-3">Submitted</th>
+                  <th className="px-5 py-3">Reward</th>
+                  <th className="px-5 py-3 text-right">Decision</th>
+                </tr>
+              </thead>
+              <tbody>
+                {[...pendingTasks, ...reviewedTasks].map((t) => {
+                  const c = campaigns.find((x) => x.id === t.campaignId);
+                  return (
+                    <tr key={t.campaignId} className="border-t border-border/60">
+                      <td className="px-5 py-3 font-medium">{c?.title ?? t.campaignId}</td>
+                      <td className="px-5 py-3 max-w-[260px] truncate text-xs text-muted-foreground" title={t.proof}>
+                        {t.proof}
+                      </td>
+                      <td className="px-5 py-3 text-xs text-muted-foreground">
+                        {new Date(t.submittedAt).toLocaleString()}
+                      </td>
+                      <td className="px-5 py-3 font-semibold">${t.reward.toFixed(2)}</td>
+                      <td className="px-5 py-3 text-right">
+                        {t.status === "pending" ? (
+                          <div className="inline-flex gap-1.5">
+                            <button
+                              onClick={() => store.reviewTask(t.campaignId, "approved")}
+                              className="rounded-lg bg-success-bg px-2.5 py-1 text-xs font-semibold text-promote-foreground hover:opacity-90"
+                            >
+                              Approve & credit
+                            </button>
+                            <button
+                              onClick={() => store.reviewTask(t.campaignId, "rejected", "Proof not valid")}
+                              className="rounded-lg bg-destructive/10 px-2.5 py-1 text-xs font-semibold text-destructive hover:bg-destructive/15"
+                            >
+                              Reject
+                            </button>
+                          </div>
+                        ) : (
+                          <span
+                            className={`inline-flex rounded-md px-2 py-1 text-xs font-semibold capitalize ${
+                              t.status === "approved"
+                                ? "bg-success-bg text-promote-foreground"
+                                : "bg-destructive/10 text-destructive"
+                            }`}
+                          >
+                            {t.status}
+                          </span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
+
+      <section className="space-y-3">
         <h2 className="text-lg font-semibold">All campaigns</h2>
         <div className="overflow-hidden rounded-2xl bg-card ring-1 ring-border/60">
           <table className="w-full text-sm">
