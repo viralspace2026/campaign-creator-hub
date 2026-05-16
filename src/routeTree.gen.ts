@@ -19,6 +19,7 @@ import { Route as BrandIndexRouteImport } from './routes/brand.index'
 import { Route as AffiliateIndexRouteImport } from './routes/affiliate.index'
 import { Route as SignupBrandRouteImport } from './routes/signup.brand'
 import { Route as SignupAffiliateRouteImport } from './routes/signup.affiliate'
+import { Route as AffiliatePerformanceRouteImport } from './routes/affiliate.performance'
 import { Route as AffiliateEarningsRouteImport } from './routes/affiliate.earnings'
 import { Route as BrandCampaignsNewRouteImport } from './routes/brand.campaigns.new'
 import { Route as AffiliateCampaignsIdRouteImport } from './routes/affiliate.campaigns.$id'
@@ -73,6 +74,11 @@ const SignupAffiliateRoute = SignupAffiliateRouteImport.update({
   path: '/signup/affiliate',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AffiliatePerformanceRoute = AffiliatePerformanceRouteImport.update({
+  id: '/performance',
+  path: '/performance',
+  getParentRoute: () => AffiliateRoute,
+} as any)
 const AffiliateEarningsRoute = AffiliateEarningsRouteImport.update({
   id: '/earnings',
   path: '/earnings',
@@ -97,6 +103,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/profile': typeof ProfileRoute
   '/affiliate/earnings': typeof AffiliateEarningsRoute
+  '/affiliate/performance': typeof AffiliatePerformanceRoute
   '/signup/affiliate': typeof SignupAffiliateRoute
   '/signup/brand': typeof SignupBrandRoute
   '/affiliate/': typeof AffiliateIndexRoute
@@ -110,6 +117,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/profile': typeof ProfileRoute
   '/affiliate/earnings': typeof AffiliateEarningsRoute
+  '/affiliate/performance': typeof AffiliatePerformanceRoute
   '/signup/affiliate': typeof SignupAffiliateRoute
   '/signup/brand': typeof SignupBrandRoute
   '/affiliate': typeof AffiliateIndexRoute
@@ -126,6 +134,7 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/profile': typeof ProfileRoute
   '/affiliate/earnings': typeof AffiliateEarningsRoute
+  '/affiliate/performance': typeof AffiliatePerformanceRoute
   '/signup/affiliate': typeof SignupAffiliateRoute
   '/signup/brand': typeof SignupBrandRoute
   '/affiliate/': typeof AffiliateIndexRoute
@@ -143,6 +152,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/profile'
     | '/affiliate/earnings'
+    | '/affiliate/performance'
     | '/signup/affiliate'
     | '/signup/brand'
     | '/affiliate/'
@@ -156,6 +166,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/profile'
     | '/affiliate/earnings'
+    | '/affiliate/performance'
     | '/signup/affiliate'
     | '/signup/brand'
     | '/affiliate'
@@ -171,6 +182,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/profile'
     | '/affiliate/earnings'
+    | '/affiliate/performance'
     | '/signup/affiliate'
     | '/signup/brand'
     | '/affiliate/'
@@ -262,6 +274,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SignupAffiliateRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/affiliate/performance': {
+      id: '/affiliate/performance'
+      path: '/performance'
+      fullPath: '/affiliate/performance'
+      preLoaderRoute: typeof AffiliatePerformanceRouteImport
+      parentRoute: typeof AffiliateRoute
+    }
     '/affiliate/earnings': {
       id: '/affiliate/earnings'
       path: '/earnings'
@@ -288,12 +307,14 @@ declare module '@tanstack/react-router' {
 
 interface AffiliateRouteChildren {
   AffiliateEarningsRoute: typeof AffiliateEarningsRoute
+  AffiliatePerformanceRoute: typeof AffiliatePerformanceRoute
   AffiliateIndexRoute: typeof AffiliateIndexRoute
   AffiliateCampaignsIdRoute: typeof AffiliateCampaignsIdRoute
 }
 
 const AffiliateRouteChildren: AffiliateRouteChildren = {
   AffiliateEarningsRoute: AffiliateEarningsRoute,
+  AffiliatePerformanceRoute: AffiliatePerformanceRoute,
   AffiliateIndexRoute: AffiliateIndexRoute,
   AffiliateCampaignsIdRoute: AffiliateCampaignsIdRoute,
 }
@@ -327,3 +348,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
