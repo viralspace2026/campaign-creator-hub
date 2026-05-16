@@ -176,52 +176,59 @@ function Detail() {
               </ol>
             </div>
 
-            <div className="space-y-3">
-              <h4 className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Your referral link</h4>
-              {refLink ? (
-                <>
-                  <div className="flex items-center gap-2 rounded-xl bg-muted/60 p-3">
-                    <code className="flex-1 truncate text-sm">{refLink}</code>
-                    <button
-                      onClick={() => {
-                        navigator.clipboard?.writeText(refLink);
-                        setCopied(true);
-                        setTimeout(() => setCopied(false), 1500);
-                      }}
-                      className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground hover:opacity-90"
-                    >
-                      {copied ? <Check className="size-3.5" /> : <Copy className="size-3.5" />}
-                      {copied ? "Copied" : "Copy"}
-                    </button>
-                  </div>
-                  <ShareRow url={refLink} title={`Check out ${c.title}`} />
-                  {current === "sales" && c.commission && (
-                    <p className="text-xs text-muted-foreground">You earn <strong>{c.commission}</strong> on every verified sale.</p>
-                  )}
-                </>
-              ) : (
-                <p className="rounded-xl bg-muted/60 p-3 text-sm text-muted-foreground">
-                  Click <strong>Participate</strong> to generate your unique affiliate link.
-                </p>
-              )}
-            </div>
+            {(current === "sales" || current === "promote") && (
+              <div className="space-y-3">
+                <h4 className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Your referral link</h4>
+                {refLink ? (
+                  <>
+                    <div className="flex items-center gap-2 rounded-xl bg-muted/60 p-3">
+                      <code className="flex-1 truncate text-sm">{refLink}</code>
+                      <button
+                        onClick={() => {
+                          navigator.clipboard?.writeText(refLink);
+                          setCopied(true);
+                          setTimeout(() => setCopied(false), 1500);
+                        }}
+                        className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground hover:opacity-90"
+                      >
+                        {copied ? <Check className="size-3.5" /> : <Copy className="size-3.5" />}
+                        {copied ? "Copied" : "Copy"}
+                      </button>
+                    </div>
+                    <ShareRow url={refLink} title={`Check out ${c.title}`} />
+                    {current === "sales" && c.commission && (
+                      <p className="text-xs text-muted-foreground">You earn <strong>{c.commission}</strong> on every verified sale.</p>
+                    )}
+                  </>
+                ) : (
+                  <p className="rounded-xl bg-muted/60 p-3 text-sm text-muted-foreground">
+                    Click <strong>Participate</strong> to generate your unique affiliate link.
+                  </p>
+                )}
+              </div>
+            )}
+
+            {current === "survey" && <SurveyPanel campaignId={id} />}
+            {current === "task" && <TaskPanel campaignId={id} />}
           </div>
 
-          <button
-            onClick={() => {
-              store.joinAction(id, current);
-              const newCode = store.getOrCreateAffiliateLink(id);
-              const link = `${window.location.origin}/affiliate/campaigns/${id}?ref=${newCode}`;
-              navigator.clipboard?.writeText(link).then(() => {
-                setCopied(true);
-                setTimeout(() => setCopied(false), 1800);
-              });
-            }}
-            disabled={isJoined}
-            className="mt-6 inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-60"
-          >
-            {isJoined ? (<><CheckCircle2 className="size-4" /> Joined — link copied</>) : "Participate & copy my link"}
-          </button>
+          {(current === "sales" || current === "promote") && (
+            <button
+              onClick={() => {
+                store.joinAction(id, current);
+                const newCode = store.getOrCreateAffiliateLink(id);
+                const link = `${window.location.origin}/affiliate/campaigns/${id}?ref=${newCode}`;
+                navigator.clipboard?.writeText(link).then(() => {
+                  setCopied(true);
+                  setTimeout(() => setCopied(false), 1800);
+                });
+              }}
+              disabled={isJoined}
+              className="mt-6 inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-60"
+            >
+              {isJoined ? (<><CheckCircle2 className="size-4" /> Joined — link copied</>) : "Participate & copy my link"}
+            </button>
+          )}
         </div>
       )}
 
