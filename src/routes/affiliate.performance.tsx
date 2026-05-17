@@ -53,6 +53,7 @@ function Performance() {
               campaignTitle={campaign.title}
               campaignImage={campaign.image}
               action={action}
+              payout={formatPayout(payoutFor(campaign, action), action)}
               link={links[campaign.id]}
               visits={visits[campaign.id] ?? []}
               survey={surveys[campaign.id]}
