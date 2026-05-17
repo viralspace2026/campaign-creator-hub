@@ -13,6 +13,8 @@ export interface StoredCampaign extends Omit<Campaign, "status" | "actions"> {
   status: CampaignStatus;
   actions: ActionType[];
   actionConfigs?: ActionConfig[];
+  budgetTotal?: number;
+  budgetSpent?: number;
 }
 
 export interface CampaignDraft {
