@@ -234,61 +234,114 @@ function BrandHome() {
       <section className="space-y-3">
         <h2 className="text-lg font-semibold">All campaigns</h2>
         <div className="overflow-hidden rounded-2xl bg-card ring-1 ring-border/60">
-          <table className="w-full text-sm">
-            <thead className="bg-muted/60 text-left text-xs uppercase tracking-wide text-muted-foreground">
-              <tr>
-                <th className="px-5 py-3">Campaign</th>
-                <th className="px-5 py-3">Status</th>
-                <th className="px-5 py-3">Actions</th>
-                <th className="px-5 py-3">Preview link</th>
-                <th className="px-5 py-3 text-right">Sales</th>
-              </tr>
-            </thead>
-            <tbody>
-              {campaigns.map((c) => (
-                <tr key={c.id} className="border-t border-border/60">
-                  <td className="px-5 py-3">
-                    <div className="flex items-center gap-3">
-                      <img src={c.image} alt="" className="size-10 rounded-lg object-cover" />
-                      <div>
-                        <div className="font-semibold">{c.title}</div>
-                        <div className="text-xs text-muted-foreground">{c.productType}</div>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-5 py-3">
-                    <StatusBadge status={c.status} />
-                  </td>
-                  <td className="px-5 py-3">
-                    <div className="flex flex-wrap gap-1.5">
-                      {c.actions.map((a) => (
-                        <div key={a} className="w-24">
-                          <ActionTile
-                            type={a}
-                            size="sm"
-                            onClick={() => setActionView({ campaign: c, action: a })}
-                          />
-                        </div>
-                      ))}
-                    </div>
-                  </td>
-                  <td className="px-5 py-3">
-                    <button
-                      onClick={() => copyPreview(c.id)}
-                      className="inline-flex items-center gap-1.5 rounded-lg bg-muted px-2.5 py-1.5 text-xs font-semibold text-muted-foreground hover:bg-accent hover:text-foreground"
-                      title={previewLinkFor(c.id)}
-                    >
-                      {copiedId === c.id ? <Check className="size-3.5" /> : <Copy className="size-3.5" />}
-                      {copiedId === c.id ? "Copied" : "Copy link"}
-                    </button>
-                  </td>
-                  <td className="px-5 py-3 text-right font-semibold">{c.stats.totalSales.toLocaleString()}</td>
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[760px] text-sm">
+              <thead className="bg-muted/60 text-left text-xs uppercase tracking-wide text-muted-foreground">
+                <tr>
+                  <th className="px-4 py-3 sm:px-5">Campaign</th>
+                  <th className="px-4 py-3 sm:px-5">Status</th>
+                  <th className="px-4 py-3 sm:px-5">Actions</th>
+                  <th className="px-4 py-3 sm:px-5">Budget</th>
+                  <th className="px-4 py-3 sm:px-5">Preview</th>
+                  <th className="px-4 py-3 text-right sm:px-5">Manage</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {campaigns.map((c) => {
+                  const total = c.budgetTotal ?? 0;
+                  const spent = c.budgetSpent ?? 0;
+                  const remaining = Math.max(0, total - spent);
+                  const pct = total > 0 ? Math.min(100, (spent / total) * 100) : 0;
+                  return (
+                    <tr key={c.id} className="border-t border-border/60 align-top">
+                      <td className="px-4 py-3 sm:px-5">
+                        <div className="flex items-center gap-3">
+                          <img src={c.image} alt="" className="size-10 rounded-lg object-cover" />
+                          <div className="min-w-0">
+                            <div className="truncate font-semibold">{c.title}</div>
+                            <div className="text-xs text-muted-foreground">{c.productType}</div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 sm:px-5">
+                        <StatusBadge status={c.status} />
+                      </td>
+                      <td className="px-4 py-3 sm:px-5">
+                        <div className="flex flex-wrap gap-1.5">
+                          {c.actions.map((a) => (
+                            <div key={a} className="w-20 sm:w-24">
+                              <ActionTile
+                                type={a}
+                                size="sm"
+                                onClick={() => setActionView({ campaign: c, action: a })}
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 sm:px-5">
+                        <div className="min-w-[120px] space-y-1">
+                          <div className="text-xs text-muted-foreground">
+                            ${remaining.toFixed(0)} / ${total.toFixed(0)}
+                          </div>
+                          <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
+                            <div className="h-full bg-primary" style={{ width: `${pct}%` }} />
+                          </div>
+                          {remaining <= 0 && total > 0 && (
+                            <div className="text-[10px] font-semibold uppercase text-destructive">Depleted</div>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 sm:px-5">
+                        <button
+                          onClick={() => copyPreview(c.id)}
+                          className="inline-flex items-center gap-1.5 rounded-lg bg-muted px-2.5 py-1.5 text-xs font-semibold text-muted-foreground hover:bg-accent hover:text-foreground"
+                          title={previewLinkFor(c.id)}
+                        >
+                          {copiedId === c.id ? <Check className="size-3.5" /> : <Copy className="size-3.5" />}
+                          {copiedId === c.id ? "Copied" : "Copy"}
+                        </button>
+                      </td>
+                      <td className="px-4 py-3 text-right sm:px-5">
+                        <div className="inline-flex flex-wrap justify-end gap-1.5">
+                          <button
+                            onClick={() => setTopUp(c)}
+                            className="inline-flex items-center gap-1 rounded-lg bg-success-bg px-2 py-1 text-xs font-semibold text-promote-foreground hover:opacity-90"
+                            title="Top up budget"
+                          >
+                            <DollarSign className="size-3.5" /> Top up
+                          </button>
+                          <button
+                            onClick={() => setEditing(c)}
+                            className="inline-flex items-center gap-1 rounded-lg bg-muted px-2 py-1 text-xs font-semibold hover:bg-accent"
+                            title="Edit campaign"
+                          >
+                            <Pencil className="size-3.5" /> Edit
+                          </button>
+                          <button
+                            onClick={() => {
+                              if (confirm(`Delete "${c.title}"? This cannot be undone.`)) {
+                                store.deleteCampaign(c.id);
+                              }
+                            }}
+                            className="inline-flex items-center gap-1 rounded-lg bg-destructive/10 px-2 py-1 text-xs font-semibold text-destructive hover:bg-destructive/15"
+                            title="Delete campaign"
+                          >
+                            <Trash2 className="size-3.5" /> Delete
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         </div>
       </section>
+
+      {editing && <EditCampaignDialog campaign={editing} onClose={() => setEditing(null)} />}
+      {topUp && <TopUpDialog campaign={topUp} onClose={() => setTopUp(null)} />}
 
       {actionView && (
         <ActionAnalyticsDialog
