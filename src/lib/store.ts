@@ -192,6 +192,8 @@ export const store = {
       actionConfigs: d.actions,
       stats: { totalSales: 0, conversionRate: "—", affiliates: 0, visitors: 0 },
       status: "pending",
+      budgetTotal: Number(d.actions.find((a) => a.type === "sales")?.data.budget) || 500,
+      budgetSpent: 0,
     };
     setState((s) => ({
       ...s,
