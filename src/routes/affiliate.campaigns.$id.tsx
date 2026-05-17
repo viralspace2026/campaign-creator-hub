@@ -3,7 +3,7 @@ import { ArrowLeft, Copy, Check, CheckCircle2, Share2, Activity, Lock, Clipboard
 import { useEffect, useMemo, useRef, useState } from "react";
 import { actionMeta, type ActionType } from "@/lib/mock-data";
 import { ActionTile } from "@/components/ActionTile";
-import { store, useStore } from "@/lib/store";
+import { store, useStore, payoutFor, formatPayout } from "@/lib/store";
 
 function parseUA(ua: string) {
   const isTablet = /iPad|Tablet/i.test(ua);
