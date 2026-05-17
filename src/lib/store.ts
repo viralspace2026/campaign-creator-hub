@@ -13,6 +13,8 @@ export interface StoredCampaign extends Omit<Campaign, "status" | "actions"> {
   status: CampaignStatus;
   actions: ActionType[];
   actionConfigs?: ActionConfig[];
+  budgetTotal?: number;
+  budgetSpent?: number;
 }
 
 export interface CampaignDraft {
@@ -70,6 +72,16 @@ interface State {
   affiliateProfile: AffiliateProfile;
   surveys: Record<string, SurveySubmission>;
   tasks: Record<string, TaskSubmission>;
+  withdrawals: Withdrawal[];
+}
+
+export interface Withdrawal {
+  id: string;
+  amount: number;
+  method: string;
+  destination: string;
+  status: "pending" | "paid" | "rejected";
+  requestedAt: number;
 }
 
 export interface Visit {
@@ -119,6 +131,7 @@ function load(): State {
     affiliateProfile: defaultAffiliateProfile,
     surveys: {},
     tasks: {},
+    withdrawals: [],
   };
   if (typeof window === "undefined") return base;
   try {
@@ -179,6 +192,8 @@ export const store = {
       actionConfigs: d.actions,
       stats: { totalSales: 0, conversionRate: "—", affiliates: 0, visitors: 0 },
       status: "pending",
+      budgetTotal: Number(d.actions.find((a) => a.type === "sales")?.data.budget) || 500,
+      budgetSpent: 0,
     };
     setState((s) => ({
       ...s,
@@ -192,6 +207,35 @@ export const store = {
       ...s,
       campaigns: s.campaigns.map((c) => (c.id === id ? { ...c, status } : c)),
     }));
+  },
+  updateCampaign(id: string, patch: Partial<StoredCampaign>) {
+    setState((s) => ({
+      ...s,
+      campaigns: s.campaigns.map((c) => (c.id === id ? { ...c, ...patch } : c)),
+    }));
+  },
+  deleteCampaign(id: string) {
+    setState((s) => ({ ...s, campaigns: s.campaigns.filter((c) => c.id !== id) }));
+  },
+  topUpBudget(id: string, amount: number) {
+    setState((s) => ({
+      ...s,
+      campaigns: s.campaigns.map((c) =>
+        c.id === id ? { ...c, budgetTotal: (c.budgetTotal ?? 0) + amount } : c,
+      ),
+    }));
+  },
+  requestWithdrawal(amount: number, method: string, destination: string): Withdrawal {
+    const w: Withdrawal = {
+      id: `w-${Date.now()}`,
+      amount,
+      method,
+      destination,
+      status: "pending",
+      requestedAt: Date.now(),
+    };
+    setState((s) => ({ ...s, withdrawals: [w, ...s.withdrawals] }));
+    return w;
   },
   joinAction(campaignId: string, type: ActionType) {
     setState((s) => {
@@ -326,3 +370,63 @@ export function useStore<T>(selector: (s: State) => T): T {
     () => selector(state),
   );
 }
+
+export function payoutFor(campaign: StoredCampaign, action: ActionType): number {
+  const cfg = campaign.actionConfigs?.find((a) => a.type === action)?.data ?? {};
+  if (action === "sales") {
+    const commissionStr = String(cfg.commission ?? campaign.commission ?? "");
+    const pct = Number(commissionStr.match(/(\d+(\.\d+)?)/)?.[1] ?? 0);
+    const price = Number(cfg.price) || campaign.price || 0;
+    if (pct && price) return +(price * (pct / 100)).toFixed(2);
+    return 0;
+  }
+  if (cfg.reward) return Number(cfg.reward);
+  if (cfg.price) return Number(cfg.price);
+  const tier = String(cfg.pricing ?? "");
+  if (tier === "Pro") return 50;
+  if (tier === "Premium") return 15;
+  if (tier === "Standard") return 5;
+  if (tier === "Basic") return 1;
+  return action === "promote" ? 0.5 : action === "survey" ? 1.5 : 5;
+}
+
+export function formatPayout(amount: number, action: ActionType): string {
+  if (action === "promote") return `$${amount.toFixed(2)} / 1k clicks`;
+  if (action === "sales") return amount > 0 ? `$${amount.toFixed(2)} / sale` : "Commission-based";
+  return `$${amount.toFixed(2)}`;
+}
+
+export function affiliateBalance(s: State): { available: number; pending: number; lifetime: number } {
+  let available = 0;
+  let pending = 0;
+  Object.values(s.surveys).forEach((sv) => {
+    if (sv.credited) available += sv.reward;
+  });
+  Object.values(s.tasks).forEach((t) => {
+    if (t.status === "approved" && t.credited) available += t.reward;
+    else if (t.status === "pending") pending += t.reward;
+  });
+  // Sales/promote demo earnings derived from visits
+  Object.entries(s.visits).forEach(([cid, list]) => {
+    const c = s.campaigns.find((x) => x.id === cid);
+    if (!c) return;
+    if (c.actions.includes("sales")) {
+      const conv = Math.round(list.length * 0.04);
+      available += conv * Math.max(1, payoutFor(c, "sales"));
+    }
+    if (c.actions.includes("promote")) {
+      available += (list.length / 1000) * payoutFor(c, "promote");
+    }
+  });
+  const withdrawn = s.withdrawals
+    .filter((w) => w.status !== "rejected")
+    .reduce((sum, w) => sum + w.amount, 0);
+  const lifetime = available;
+  available = Math.max(0, available - withdrawn);
+  return {
+    available: +available.toFixed(2),
+    pending: +pending.toFixed(2),
+    lifetime: +lifetime.toFixed(2),
+  };
+}
+

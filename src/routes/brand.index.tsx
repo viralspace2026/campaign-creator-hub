@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Plus, ShoppingBag, TrendingUp, Users, Eye, Copy, Check, X } from "lucide-react";
+import { Plus, ShoppingBag, TrendingUp, Users, Eye, Copy, Check, X, Pencil, Trash2, DollarSign } from "lucide-react";
 import { useMemo, useState } from "react";
 import {
   Area,
@@ -56,6 +56,8 @@ function BrandHome() {
   const [metric, setMetric] = useState<Metric>("visitors");
   const [actionView, setActionView] = useState<{ campaign: StoredCampaign; action: ActionType } | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [editing, setEditing] = useState<StoredCampaign | null>(null);
+  const [topUp, setTopUp] = useState<StoredCampaign | null>(null);
 
   const pendingTasks = Object.values(taskSubmissions).filter((t) => t.status === "pending");
   const reviewedTasks = Object.values(taskSubmissions).filter((t) => t.status !== "pending");
@@ -169,7 +171,8 @@ function BrandHome() {
           </div>
         ) : (
           <div className="overflow-hidden rounded-2xl bg-card ring-1 ring-border/60">
-            <table className="w-full text-sm">
+            <div className="overflow-x-auto">
+            <table className="w-full min-w-[640px] text-sm">
               <thead className="bg-muted/60 text-left text-xs uppercase tracking-wide text-muted-foreground">
                 <tr>
                   <th className="px-5 py-3">Campaign</th>
@@ -225,6 +228,7 @@ function BrandHome() {
                 })}
               </tbody>
             </table>
+            </div>
           </div>
         )}
       </section>
@@ -232,61 +236,114 @@ function BrandHome() {
       <section className="space-y-3">
         <h2 className="text-lg font-semibold">All campaigns</h2>
         <div className="overflow-hidden rounded-2xl bg-card ring-1 ring-border/60">
-          <table className="w-full text-sm">
-            <thead className="bg-muted/60 text-left text-xs uppercase tracking-wide text-muted-foreground">
-              <tr>
-                <th className="px-5 py-3">Campaign</th>
-                <th className="px-5 py-3">Status</th>
-                <th className="px-5 py-3">Actions</th>
-                <th className="px-5 py-3">Preview link</th>
-                <th className="px-5 py-3 text-right">Sales</th>
-              </tr>
-            </thead>
-            <tbody>
-              {campaigns.map((c) => (
-                <tr key={c.id} className="border-t border-border/60">
-                  <td className="px-5 py-3">
-                    <div className="flex items-center gap-3">
-                      <img src={c.image} alt="" className="size-10 rounded-lg object-cover" />
-                      <div>
-                        <div className="font-semibold">{c.title}</div>
-                        <div className="text-xs text-muted-foreground">{c.productType}</div>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-5 py-3">
-                    <StatusBadge status={c.status} />
-                  </td>
-                  <td className="px-5 py-3">
-                    <div className="flex flex-wrap gap-1.5">
-                      {c.actions.map((a) => (
-                        <div key={a} className="w-24">
-                          <ActionTile
-                            type={a}
-                            size="sm"
-                            onClick={() => setActionView({ campaign: c, action: a })}
-                          />
-                        </div>
-                      ))}
-                    </div>
-                  </td>
-                  <td className="px-5 py-3">
-                    <button
-                      onClick={() => copyPreview(c.id)}
-                      className="inline-flex items-center gap-1.5 rounded-lg bg-muted px-2.5 py-1.5 text-xs font-semibold text-muted-foreground hover:bg-accent hover:text-foreground"
-                      title={previewLinkFor(c.id)}
-                    >
-                      {copiedId === c.id ? <Check className="size-3.5" /> : <Copy className="size-3.5" />}
-                      {copiedId === c.id ? "Copied" : "Copy link"}
-                    </button>
-                  </td>
-                  <td className="px-5 py-3 text-right font-semibold">{c.stats.totalSales.toLocaleString()}</td>
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[760px] text-sm">
+              <thead className="bg-muted/60 text-left text-xs uppercase tracking-wide text-muted-foreground">
+                <tr>
+                  <th className="px-4 py-3 sm:px-5">Campaign</th>
+                  <th className="px-4 py-3 sm:px-5">Status</th>
+                  <th className="px-4 py-3 sm:px-5">Actions</th>
+                  <th className="px-4 py-3 sm:px-5">Budget</th>
+                  <th className="px-4 py-3 sm:px-5">Preview</th>
+                  <th className="px-4 py-3 text-right sm:px-5">Manage</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {campaigns.map((c) => {
+                  const total = c.budgetTotal ?? 0;
+                  const spent = c.budgetSpent ?? 0;
+                  const remaining = Math.max(0, total - spent);
+                  const pct = total > 0 ? Math.min(100, (spent / total) * 100) : 0;
+                  return (
+                    <tr key={c.id} className="border-t border-border/60 align-top">
+                      <td className="px-4 py-3 sm:px-5">
+                        <div className="flex items-center gap-3">
+                          <img src={c.image} alt="" className="size-10 rounded-lg object-cover" />
+                          <div className="min-w-0">
+                            <div className="truncate font-semibold">{c.title}</div>
+                            <div className="text-xs text-muted-foreground">{c.productType}</div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 sm:px-5">
+                        <StatusBadge status={c.status} />
+                      </td>
+                      <td className="px-4 py-3 sm:px-5">
+                        <div className="flex flex-wrap gap-1.5">
+                          {c.actions.map((a) => (
+                            <div key={a} className="w-20 sm:w-24">
+                              <ActionTile
+                                type={a}
+                                size="sm"
+                                onClick={() => setActionView({ campaign: c, action: a })}
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 sm:px-5">
+                        <div className="min-w-[120px] space-y-1">
+                          <div className="text-xs text-muted-foreground">
+                            ${remaining.toFixed(0)} / ${total.toFixed(0)}
+                          </div>
+                          <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
+                            <div className="h-full bg-primary" style={{ width: `${pct}%` }} />
+                          </div>
+                          {remaining <= 0 && total > 0 && (
+                            <div className="text-[10px] font-semibold uppercase text-destructive">Depleted</div>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 sm:px-5">
+                        <button
+                          onClick={() => copyPreview(c.id)}
+                          className="inline-flex items-center gap-1.5 rounded-lg bg-muted px-2.5 py-1.5 text-xs font-semibold text-muted-foreground hover:bg-accent hover:text-foreground"
+                          title={previewLinkFor(c.id)}
+                        >
+                          {copiedId === c.id ? <Check className="size-3.5" /> : <Copy className="size-3.5" />}
+                          {copiedId === c.id ? "Copied" : "Copy"}
+                        </button>
+                      </td>
+                      <td className="px-4 py-3 text-right sm:px-5">
+                        <div className="inline-flex flex-wrap justify-end gap-1.5">
+                          <button
+                            onClick={() => setTopUp(c)}
+                            className="inline-flex items-center gap-1 rounded-lg bg-success-bg px-2 py-1 text-xs font-semibold text-promote-foreground hover:opacity-90"
+                            title="Top up budget"
+                          >
+                            <DollarSign className="size-3.5" /> Top up
+                          </button>
+                          <button
+                            onClick={() => setEditing(c)}
+                            className="inline-flex items-center gap-1 rounded-lg bg-muted px-2 py-1 text-xs font-semibold hover:bg-accent"
+                            title="Edit campaign"
+                          >
+                            <Pencil className="size-3.5" /> Edit
+                          </button>
+                          <button
+                            onClick={() => {
+                              if (confirm(`Delete "${c.title}"? This cannot be undone.`)) {
+                                store.deleteCampaign(c.id);
+                              }
+                            }}
+                            className="inline-flex items-center gap-1 rounded-lg bg-destructive/10 px-2 py-1 text-xs font-semibold text-destructive hover:bg-destructive/15"
+                            title="Delete campaign"
+                          >
+                            <Trash2 className="size-3.5" /> Delete
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         </div>
       </section>
+
+      {editing && <EditCampaignDialog campaign={editing} onClose={() => setEditing(null)} />}
+      {topUp && <TopUpDialog campaign={topUp} onClose={() => setTopUp(null)} />}
 
       {actionView && (
         <ActionAnalyticsDialog
@@ -465,3 +522,157 @@ function KpiCard({
     </div>
   );
 }
+
+function EditCampaignDialog({ campaign, onClose }: { campaign: StoredCampaign; onClose: () => void }) {
+  const [title, setTitle] = useState(campaign.title);
+  const [description, setDescription] = useState(campaign.description);
+  const [image, setImage] = useState(campaign.image);
+  const [price, setPrice] = useState(campaign.price?.toString() ?? "");
+  const [commission, setCommission] = useState(campaign.commission ?? "");
+
+  const hasSales = campaign.actions.includes("sales");
+
+  const save = () => {
+    store.updateCampaign(campaign.id, {
+      title,
+      description,
+      image,
+      ...(hasSales ? { price: price ? Number(price) : undefined, commission } : {}),
+    });
+    onClose();
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 grid place-items-center bg-foreground/30 p-4" onClick={onClose}>
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="max-h-[90vh] w-full max-w-lg overflow-auto rounded-3xl bg-card p-5 shadow-2xl ring-1 ring-border sm:p-6"
+      >
+        <div className="flex items-start justify-between gap-4">
+          <h3 className="text-lg font-semibold">Edit campaign</h3>
+          <button onClick={onClose} className="rounded-lg p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground" aria-label="Close">
+            <X className="size-4" />
+          </button>
+        </div>
+
+        <div className="mt-4 space-y-3">
+          <DialogField label="Title">
+            <input value={title} onChange={(e) => setTitle(e.target.value)} className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-ring/30" />
+          </DialogField>
+          <DialogField label="Description">
+            <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={3} className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-ring/30" />
+          </DialogField>
+          <DialogField label="Image URL">
+            <input value={image} onChange={(e) => setImage(e.target.value)} className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-ring/30" />
+          </DialogField>
+          {hasSales && (
+            <div className="grid grid-cols-2 gap-3">
+              <DialogField label="Price (USD)">
+                <input type="number" min="0" step="0.01" value={price} onChange={(e) => setPrice(e.target.value)} className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-ring/30" />
+              </DialogField>
+              <DialogField label="Commission">
+                <input value={commission} onChange={(e) => setCommission(e.target.value)} placeholder="e.g. 25% per sale" className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-ring/30" />
+              </DialogField>
+            </div>
+          )}
+        </div>
+
+        <div className="mt-5 flex justify-end gap-2">
+          <button onClick={onClose} className="rounded-lg bg-muted px-4 py-2 text-sm font-semibold hover:bg-accent">Cancel</button>
+          <button onClick={save} className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90">Save changes</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function TopUpDialog({ campaign, onClose }: { campaign: StoredCampaign; onClose: () => void }) {
+  const [amount, setAmount] = useState("100");
+  const total = campaign.budgetTotal ?? 0;
+  const spent = campaign.budgetSpent ?? 0;
+  const remaining = Math.max(0, total - spent);
+  const presets = [50, 100, 250, 500, 1000];
+
+  const apply = () => {
+    const v = Number(amount);
+    if (!Number.isFinite(v) || v <= 0) return;
+    store.topUpBudget(campaign.id, v);
+    onClose();
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 grid place-items-center bg-foreground/30 p-4" onClick={onClose}>
+      <div onClick={(e) => e.stopPropagation()} className="w-full max-w-md rounded-3xl bg-card p-5 shadow-2xl ring-1 ring-border sm:p-6">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h3 className="text-lg font-semibold">Refill budget</h3>
+            <p className="mt-1 text-sm text-muted-foreground">{campaign.title}</p>
+          </div>
+          <button onClick={onClose} className="rounded-lg p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground" aria-label="Close">
+            <X className="size-4" />
+          </button>
+        </div>
+
+        <div className="mt-4 grid grid-cols-3 gap-2 rounded-2xl bg-muted/60 p-3 text-center text-xs">
+          <div>
+            <div className="text-muted-foreground">Remaining</div>
+            <div className="font-bold">${remaining.toFixed(0)}</div>
+          </div>
+          <div>
+            <div className="text-muted-foreground">Spent</div>
+            <div className="font-bold">${spent.toFixed(0)}</div>
+          </div>
+          <div>
+            <div className="text-muted-foreground">Total</div>
+            <div className="font-bold">${total.toFixed(0)}</div>
+          </div>
+        </div>
+
+        <div className="mt-4 flex flex-wrap gap-2">
+          {presets.map((p) => (
+            <button
+              key={p}
+              onClick={() => setAmount(String(p))}
+              className={`rounded-lg px-3 py-1.5 text-xs font-semibold ring-1 transition ${
+                amount === String(p)
+                  ? "bg-primary text-primary-foreground ring-primary"
+                  : "bg-card text-muted-foreground ring-border hover:bg-muted"
+              }`}
+            >
+              +${p}
+            </button>
+          ))}
+        </div>
+
+        <label className="mt-3 block text-sm font-medium">Custom amount</label>
+        <div className="mt-1 flex gap-2">
+          <span className="grid place-items-center rounded-lg bg-muted px-3 text-sm font-semibold">$</span>
+          <input
+            type="number"
+            min="1"
+            value={amount}
+            onChange={(e) => setAmount(e.target.value)}
+            className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-ring/30"
+          />
+        </div>
+
+        <div className="mt-5 flex justify-end gap-2">
+          <button onClick={onClose} className="rounded-lg bg-muted px-4 py-2 text-sm font-semibold hover:bg-accent">Cancel</button>
+          <button onClick={apply} className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90">
+            Add ${Number(amount || 0).toFixed(0)}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function DialogField({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <label className="block">
+      <span className="mb-1.5 block text-sm font-medium">{label}</span>
+      {children}
+    </label>
+  );
+}
+

@@ -3,7 +3,7 @@ import { ArrowLeft, Copy, Check, CheckCircle2, Share2, Activity, Lock, Clipboard
 import { useEffect, useMemo, useRef, useState } from "react";
 import { actionMeta, type ActionType } from "@/lib/mock-data";
 import { ActionTile } from "@/components/ActionTile";
-import { store, useStore } from "@/lib/store";
+import { store, useStore, payoutFor, formatPayout } from "@/lib/store";
 
 function parseUA(ua: string) {
   const isTablet = /iPad|Tablet/i.test(ua);
@@ -126,8 +126,8 @@ function Detail() {
           <h1 className="text-4xl font-bold tracking-tight">{c.title}</h1>
           <p className="text-muted-foreground">{c.description}</p>
 
-          {c.price !== undefined && (
-            <div className="flex items-center gap-3 pt-1">
+          {c.actions.includes("sales") && c.price !== undefined && (
+            <div className="flex flex-wrap items-center gap-3 pt-1">
               <span className="text-3xl font-bold text-primary">${c.price.toFixed(2)}</span>
               {c.originalPrice && <span className="text-lg text-muted-foreground line-through">${c.originalPrice.toFixed(2)}</span>}
               {c.discount && (
@@ -140,6 +140,9 @@ function Detail() {
             {c.actions.map((a: ActionType) => (
               <div key={a} className="relative">
                 <ActionTile type={a} size="sm" selected={current === a} onClick={() => setActive(a)} />
+                <div className="mt-1 text-center text-[11px] font-semibold text-muted-foreground">
+                  {formatPayout(payoutFor(c, a), a)}
+                </div>
                 {joined.includes(a) && (
                   <CheckCircle2 className="absolute -right-1 -top-1 size-4 rounded-full bg-card text-success" />
                 )}

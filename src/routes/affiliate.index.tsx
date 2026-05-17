@@ -53,7 +53,7 @@ function Browse() {
 
       <div className="grid gap-6">
         {visible.map((c) => (
-          <CampaignCard key={c.id} campaign={c} />
+          <CampaignCard key={c.id} campaign={c} showPayouts />
         ))}
         {visible.length === 0 && (
           <div className="rounded-3xl border-2 border-dashed border-border p-12 text-center text-muted-foreground">
