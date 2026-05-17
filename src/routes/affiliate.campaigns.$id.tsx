@@ -326,8 +326,13 @@ function ShareRow({ url, title }: { url: string; title: string }) {
 
 function SurveyPanel({ campaignId }: { campaignId: string }) {
   const submission = useStore((s) => s.surveys[campaignId]);
-  const eligibility = useStore((s) => store.qualifiesForSurvey(campaignId));
   const profile = useStore((s) => s.affiliateProfile);
+  const campaign = useStore((s) => s.campaigns.find((x) => x.id === campaignId));
+  const eligibility = useMemo(
+    () => store.qualifiesForSurvey(campaignId),
+    // Recompute when inputs that affect eligibility change
+    [campaignId, profile, campaign],
+  );
   const [taking, setTaking] = useState(false);
 
   if (submission?.credited) {
