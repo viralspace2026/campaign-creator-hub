@@ -11,7 +11,7 @@ import {
 } from "recharts";
 import { ActionTile } from "@/components/ActionTile";
 import { actionMeta, type ActionType } from "@/lib/mock-data";
-import { useStore, type Visit } from "@/lib/store";
+import { formatPayout, payoutFor, useStore, type Visit } from "@/lib/store";
 import { Copy, ExternalLink } from "lucide-react";
 
 export const Route = createFileRoute("/affiliate/performance")({
