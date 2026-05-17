@@ -522,3 +522,157 @@ function KpiCard({
     </div>
   );
 }
+
+function EditCampaignDialog({ campaign, onClose }: { campaign: StoredCampaign; onClose: () => void }) {
+  const [title, setTitle] = useState(campaign.title);
+  const [description, setDescription] = useState(campaign.description);
+  const [image, setImage] = useState(campaign.image);
+  const [price, setPrice] = useState(campaign.price?.toString() ?? "");
+  const [commission, setCommission] = useState(campaign.commission ?? "");
+
+  const hasSales = campaign.actions.includes("sales");
+
+  const save = () => {
+    store.updateCampaign(campaign.id, {
+      title,
+      description,
+      image,
+      ...(hasSales ? { price: price ? Number(price) : undefined, commission } : {}),
+    });
+    onClose();
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 grid place-items-center bg-foreground/30 p-4" onClick={onClose}>
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="max-h-[90vh] w-full max-w-lg overflow-auto rounded-3xl bg-card p-5 shadow-2xl ring-1 ring-border sm:p-6"
+      >
+        <div className="flex items-start justify-between gap-4">
+          <h3 className="text-lg font-semibold">Edit campaign</h3>
+          <button onClick={onClose} className="rounded-lg p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground" aria-label="Close">
+            <X className="size-4" />
+          </button>
+        </div>
+
+        <div className="mt-4 space-y-3">
+          <DialogField label="Title">
+            <input value={title} onChange={(e) => setTitle(e.target.value)} className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-ring/30" />
+          </DialogField>
+          <DialogField label="Description">
+            <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={3} className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-ring/30" />
+          </DialogField>
+          <DialogField label="Image URL">
+            <input value={image} onChange={(e) => setImage(e.target.value)} className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-ring/30" />
+          </DialogField>
+          {hasSales && (
+            <div className="grid grid-cols-2 gap-3">
+              <DialogField label="Price (USD)">
+                <input type="number" min="0" step="0.01" value={price} onChange={(e) => setPrice(e.target.value)} className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-ring/30" />
+              </DialogField>
+              <DialogField label="Commission">
+                <input value={commission} onChange={(e) => setCommission(e.target.value)} placeholder="e.g. 25% per sale" className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-ring/30" />
+              </DialogField>
+            </div>
+          )}
+        </div>
+
+        <div className="mt-5 flex justify-end gap-2">
+          <button onClick={onClose} className="rounded-lg bg-muted px-4 py-2 text-sm font-semibold hover:bg-accent">Cancel</button>
+          <button onClick={save} className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90">Save changes</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function TopUpDialog({ campaign, onClose }: { campaign: StoredCampaign; onClose: () => void }) {
+  const [amount, setAmount] = useState("100");
+  const total = campaign.budgetTotal ?? 0;
+  const spent = campaign.budgetSpent ?? 0;
+  const remaining = Math.max(0, total - spent);
+  const presets = [50, 100, 250, 500, 1000];
+
+  const apply = () => {
+    const v = Number(amount);
+    if (!Number.isFinite(v) || v <= 0) return;
+    store.topUpBudget(campaign.id, v);
+    onClose();
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 grid place-items-center bg-foreground/30 p-4" onClick={onClose}>
+      <div onClick={(e) => e.stopPropagation()} className="w-full max-w-md rounded-3xl bg-card p-5 shadow-2xl ring-1 ring-border sm:p-6">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h3 className="text-lg font-semibold">Refill budget</h3>
+            <p className="mt-1 text-sm text-muted-foreground">{campaign.title}</p>
+          </div>
+          <button onClick={onClose} className="rounded-lg p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground" aria-label="Close">
+            <X className="size-4" />
+          </button>
+        </div>
+
+        <div className="mt-4 grid grid-cols-3 gap-2 rounded-2xl bg-muted/60 p-3 text-center text-xs">
+          <div>
+            <div className="text-muted-foreground">Remaining</div>
+            <div className="font-bold">${remaining.toFixed(0)}</div>
+          </div>
+          <div>
+            <div className="text-muted-foreground">Spent</div>
+            <div className="font-bold">${spent.toFixed(0)}</div>
+          </div>
+          <div>
+            <div className="text-muted-foreground">Total</div>
+            <div className="font-bold">${total.toFixed(0)}</div>
+          </div>
+        </div>
+
+        <div className="mt-4 flex flex-wrap gap-2">
+          {presets.map((p) => (
+            <button
+              key={p}
+              onClick={() => setAmount(String(p))}
+              className={`rounded-lg px-3 py-1.5 text-xs font-semibold ring-1 transition ${
+                amount === String(p)
+                  ? "bg-primary text-primary-foreground ring-primary"
+                  : "bg-card text-muted-foreground ring-border hover:bg-muted"
+              }`}
+            >
+              +${p}
+            </button>
+          ))}
+        </div>
+
+        <label className="mt-3 block text-sm font-medium">Custom amount</label>
+        <div className="mt-1 flex gap-2">
+          <span className="grid place-items-center rounded-lg bg-muted px-3 text-sm font-semibold">$</span>
+          <input
+            type="number"
+            min="1"
+            value={amount}
+            onChange={(e) => setAmount(e.target.value)}
+            className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-ring/30"
+          />
+        </div>
+
+        <div className="mt-5 flex justify-end gap-2">
+          <button onClick={onClose} className="rounded-lg bg-muted px-4 py-2 text-sm font-semibold hover:bg-accent">Cancel</button>
+          <button onClick={apply} className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90">
+            Add ${Number(amount || 0).toFixed(0)}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function DialogField({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <label className="block">
+      <span className="mb-1.5 block text-sm font-medium">{label}</span>
+      {children}
+    </label>
+  );
+}
+
