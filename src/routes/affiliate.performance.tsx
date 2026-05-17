@@ -71,6 +71,7 @@ function ParticipationCard({
   campaignTitle,
   campaignImage,
   action,
+  payout,
   link,
   visits,
   survey,
@@ -80,6 +81,7 @@ function ParticipationCard({
   campaignTitle: string;
   campaignImage: string;
   action: ActionType;
+  payout: string;
   link?: string;
   visits: Visit[];
   survey?: { reward: number; credited: boolean; completedAt: number };
@@ -91,14 +93,16 @@ function ParticipationCard({
     : "";
 
   return (
-    <div className="rounded-3xl bg-card p-5 ring-1 ring-border/60">
+    <div className="rounded-3xl bg-card p-4 ring-1 ring-border/60 sm:p-5">
       <div className="flex flex-wrap items-center gap-3">
         <img src={campaignImage} alt="" className="size-12 rounded-xl object-cover" />
         <div className="min-w-0 flex-1">
           <div className="truncate font-semibold">{campaignTitle}</div>
-          <div className="text-xs text-muted-foreground">{meta.label} action</div>
+          <div className="text-xs text-muted-foreground">
+            {meta.label} action · <span className="font-semibold text-foreground">{payout}</span>
+          </div>
         </div>
-        <div className="w-24">
+        <div className="w-20 sm:w-24">
           <ActionTile type={action} size="sm" />
         </div>
         <Link
