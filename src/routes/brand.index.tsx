@@ -228,6 +228,7 @@ function BrandHome() {
                 })}
               </tbody>
             </table>
+            </div>
           </div>
         )}
       </section>
