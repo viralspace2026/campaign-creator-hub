@@ -237,6 +237,7 @@ export const store = {
     setState((s) => ({ ...s, withdrawals: [w, ...s.withdrawals] }));
     return w;
   },
+  joinAction(campaignId: string, type: ActionType) {
     setState((s) => {
       const cur = s.joined[campaignId] ?? [];
       if (cur.includes(type)) return s;
