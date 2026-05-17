@@ -56,6 +56,8 @@ function BrandHome() {
   const [metric, setMetric] = useState<Metric>("visitors");
   const [actionView, setActionView] = useState<{ campaign: StoredCampaign; action: ActionType } | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [editing, setEditing] = useState<StoredCampaign | null>(null);
+  const [topUp, setTopUp] = useState<StoredCampaign | null>(null);
 
   const pendingTasks = Object.values(taskSubmissions).filter((t) => t.status === "pending");
   const reviewedTasks = Object.values(taskSubmissions).filter((t) => t.status !== "pending");
