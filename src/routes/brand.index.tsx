@@ -171,7 +171,8 @@ function BrandHome() {
           </div>
         ) : (
           <div className="overflow-hidden rounded-2xl bg-card ring-1 ring-border/60">
-            <table className="w-full text-sm">
+            <div className="overflow-x-auto">
+            <table className="w-full min-w-[640px] text-sm">
               <thead className="bg-muted/60 text-left text-xs uppercase tracking-wide text-muted-foreground">
                 <tr>
                   <th className="px-5 py-3">Campaign</th>
