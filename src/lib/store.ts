@@ -131,6 +131,7 @@ function load(): State {
     affiliateProfile: defaultAffiliateProfile,
     surveys: {},
     tasks: {},
+    withdrawals: [],
   };
   if (typeof window === "undefined") return base;
   try {
