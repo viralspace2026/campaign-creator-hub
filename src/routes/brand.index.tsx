@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Plus, ShoppingBag, TrendingUp, Users, Eye, Copy, Check, X } from "lucide-react";
+import { Plus, ShoppingBag, TrendingUp, Users, Eye, Copy, Check, X, Pencil, Trash2, DollarSign } from "lucide-react";
 import { useMemo, useState } from "react";
 import {
   Area,
