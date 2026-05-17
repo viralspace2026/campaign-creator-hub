@@ -208,7 +208,35 @@ export const store = {
       campaigns: s.campaigns.map((c) => (c.id === id ? { ...c, status } : c)),
     }));
   },
-  joinAction(campaignId: string, type: ActionType) {
+  updateCampaign(id: string, patch: Partial<StoredCampaign>) {
+    setState((s) => ({
+      ...s,
+      campaigns: s.campaigns.map((c) => (c.id === id ? { ...c, ...patch } : c)),
+    }));
+  },
+  deleteCampaign(id: string) {
+    setState((s) => ({ ...s, campaigns: s.campaigns.filter((c) => c.id !== id) }));
+  },
+  topUpBudget(id: string, amount: number) {
+    setState((s) => ({
+      ...s,
+      campaigns: s.campaigns.map((c) =>
+        c.id === id ? { ...c, budgetTotal: (c.budgetTotal ?? 0) + amount } : c,
+      ),
+    }));
+  },
+  requestWithdrawal(amount: number, method: string, destination: string): Withdrawal {
+    const w: Withdrawal = {
+      id: `w-${Date.now()}`,
+      amount,
+      method,
+      destination,
+      status: "pending",
+      requestedAt: Date.now(),
+    };
+    setState((s) => ({ ...s, withdrawals: [w, ...s.withdrawals] }));
+    return w;
+  },
     setState((s) => {
       const cur = s.joined[campaignId] ?? [];
       if (cur.includes(type)) return s;
