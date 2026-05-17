@@ -72,6 +72,16 @@ interface State {
   affiliateProfile: AffiliateProfile;
   surveys: Record<string, SurveySubmission>;
   tasks: Record<string, TaskSubmission>;
+  withdrawals: Withdrawal[];
+}
+
+export interface Withdrawal {
+  id: string;
+  amount: number;
+  method: string;
+  destination: string;
+  status: "pending" | "paid" | "rejected";
+  requestedAt: number;
 }
 
 export interface Visit {
