@@ -9,6 +9,7 @@ import {
 } from "@tanstack/react-router";
 
 import appCss from "../styles.css?url";
+import { AuthProvider } from "../lib/auth-context";   // ← Added
 
 function NotFoundComponent() {
   return (
@@ -72,18 +73,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "viralspace" },
-      { name: "description", content: "Campaign Creator Hub allows brands to build and launch marketing campaigns with customizable actions." },
-      { name: "author", content: "Lovable" },
-      { property: "og:title", content: "viralspace" },
-      { property: "og:description", content: "Campaign Creator Hub allows brands to build and launch marketing campaigns with customizable actions." },
-      { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary" },
-      { name: "twitter:site", content: "@Lovable" },
-      { name: "twitter:title", content: "viralspace" },
-      { name: "twitter:description", content: "Campaign Creator Hub allows brands to build and launch marketing campaigns with customizable actions." },
-      { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/zcuSGgzlhsRPDkwlzdVJBscEcCs2/social-images/social-1778938482321-WhatsApp_Image_2026-05-12_at_1.22.42_PM.webp" },
-      { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/zcuSGgzlhsRPDkwlzdVJBscEcCs2/social-images/social-1778938482321-WhatsApp_Image_2026-05-12_at_1.22.42_PM.webp" },
+      { title: "Campaign Creator Hub" },
+      { name: "description", content: "AI-powered affiliate marketing campaign platform" },
     ],
     links: [
       {
@@ -117,7 +108,9 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <Outlet />
+      <AuthProvider>           {/* ← AuthProvider Wrapped Here */}
+        <Outlet />
+      </AuthProvider>
     </QueryClientProvider>
   );
 }

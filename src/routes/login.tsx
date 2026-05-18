@@ -1,64 +1,83 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { Sparkles } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useState } from "react";
+import { useAuth } from "../lib/auth-context";
 
 export const Route = createFileRoute("/login")({
   head: () => ({ meta: [{ title: "Log in — ViralSpace" }] }),
   component: Login,
 });
 
-function detectRole(email: string): "brand" | "affiliate" | "admin" {
-  const e = email.trim().toLowerCase();
-  if (!e) return "affiliate";
-  if (e.endsWith("@viralspace.app") || e.startsWith("admin")) return "admin";
-  const local = e.split("@")[0] ?? "";
-  const domain = e.split("@")[1]?.split(".")[0] ?? "";
-  const brandHints = ["brand", "team", "marketing", "company", "biz", "corp"];
-  if (brandHints.some((h) => local.includes(h) || domain.includes(h))) return "brand";
-  const consumer = ["gmail", "yahoo", "outlook", "hotmail", "icloud", "proton", "live", "me"];
-  if (consumer.includes(domain)) return "affiliate";
-  return "brand";
-}
-
 function Login() {
+  const { signIn } = useAuth();
   const nav = useNavigate();
   const [email, setEmail] = useState("");
-  const role = useMemo(() => detectRole(email), [email]);
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+
+    try {
+      await signIn(email, password);
+      
+      // Small delay to let profile load
+      setTimeout(() => {
+        // We'll improve this logic once we have protected routes
+        nav({ to: "/", replace: true });
+      }, 400);
+    } catch (err: any) {
+      setError(err.message || "Invalid email or password");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <AuthShell title="Welcome back" subtitle="Log in to continue your campaigns.">
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          nav({ to: role === "brand" ? "/brand" : role === "affiliate" ? "/affiliate" : "/admin" });
-        }}
-        className="space-y-4"
-      >
-        <Field label="Email" type="email" placeholder="you@brand.com" value={email} onChange={(e) => setEmail(e.target.value)} />
-        <Field label="Password" type="password" placeholder="••••••••" />
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <Field 
+          label="Email" 
+          type="email" 
+          placeholder="you@brand.com" 
+          value={email} 
+          onChange={(e) => setEmail(e.target.value)} 
+          required 
+        />
+        <Field 
+          label="Password" 
+          type="password" 
+          placeholder="••••••••" 
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          required 
+        />
 
-        {email && (
-          <p className="rounded-lg bg-muted/60 px-3 py-2 text-xs text-muted-foreground">
-            We'll sign you in as <span className="font-semibold capitalize text-foreground">{role}</span> based on your email.
-          </p>
-        )}
+        {error && <p className="text-red-500 text-sm">{error}</p>}
 
-        <button className="w-full rounded-xl bg-primary py-3 font-semibold text-primary-foreground shadow-sm transition hover:opacity-90">
-          Log in
+        <button 
+          type="submit"
+          disabled={loading}
+          className="w-full rounded-xl bg-primary py-3 font-semibold text-primary-foreground shadow-sm transition hover:opacity-90 disabled:opacity-70"
+        >
+          {loading ? "Signing in..." : "Log in"}
         </button>
       </form>
+
       <p className="mt-6 text-center text-sm text-muted-foreground">
         New here?{" "}
-        <Link to="/signup/brand" className="font-semibold text-primary">
-          Brand
-        </Link>{" "}
+        <Link to="/signup/brand" className="font-semibold text-primary">Brand</Link>{" "}
         ·{" "}
-        <Link to="/signup/affiliate" className="font-semibold text-primary">
-          Creator
-        </Link>
+        <Link to="/signup/affiliate" className="font-semibold text-primary">Creator</Link>
       </p>
     </AuthShell>
   );
 }
+
+// ==================== HELPER COMPONENTS ====================
 
 export function AuthShell({
   title,
